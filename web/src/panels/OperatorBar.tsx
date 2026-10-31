@@ -56,6 +56,24 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
     if (world.status === "running") setPending(false);
   }, [world.status]);
 
+  // Auto-collapse keeps a live run near two minutes: the corridor caves in just after the Medium reaches the
+  // Library (mid-plan, before the gate opens), or 35s after the first agent action if that never happens.
+  const [autoCollapse, setAutoCollapse] = useState(true);
+  const collapsedRun = useRef<string | null>(null);
+  const firstAgentAt = world.log.find((e) => e.kind === "action")?.t;
+  useEffect(() => {
+    if (!autoCollapse || world.status !== "running" || world.collapsed || world.doors.crypt_gate.unlocked || !firstAgentAt) return;
+    const runKey = `${world.runId}:${world.startedAt}`;
+    if (collapsedRun.current === runKey) return;
+    const inLibrary = world.agents.medium.room === "library";
+    const wait = inLibrary ? 4000 : firstAgentAt + 35_000 - Date.now();
+    const t = setTimeout(() => {
+      collapsedRun.current = runKey;
+      operator.collapse();
+    }, Math.max(0, wait));
+    return () => clearTimeout(t);
+  }, [autoCollapse, world.status, world.collapsed, world.doors.crypt_gate.unlocked, world.agents.medium.room, world.runId, world.startedAt, firstAgentAt, operator]);
+
   const start = useCallback(() => {
     if (state !== "off") return clickSound("off");
     clickSound("on");
@@ -118,6 +136,15 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
       <Btn onClick={operator.collapse} danger>
         Collapse <Kbd>C</Kbd>
       </Btn>
+      <button
+        onClick={() => setAutoCollapse((v) => !v)}
+        title="Collapse the corridor automatically just after the Medium reaches the Library"
+        className={`whitespace-nowrap rounded-xl border px-3 py-2 font-mono text-[12px] uppercase tracking-wider ${
+          autoCollapse ? "border-blood/60 bg-blood/10 text-blood" : "border-line text-muted"
+        }`}
+      >
+        Auto {autoCollapse ? "✓" : "✗"}
+      </button>
 
       <div className="glass ml-1 flex flex-1 items-center gap-2 !rounded-xl px-2 py-1.5" style={hintAgent ? { borderColor: color, boxShadow: `0 0 18px ${color}55` } : undefined}>
         <button
