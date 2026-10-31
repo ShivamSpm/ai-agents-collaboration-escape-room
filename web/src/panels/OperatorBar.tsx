@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AGENT_IDS, AGENTS, agentIdFromRelayName } from "../../../shared/map";
 import type { AgentId, World } from "../../../shared/types";
-import { clickSound } from "../lib/clickSound";
+import { clickSound, talkSound } from "../lib/clickSound";
 import { portraitFor } from "../map/AgentToken";
 import type { Operator } from "../state/useWorld";
 import { SoundWave } from "../voice/SoundWave";
@@ -86,7 +86,14 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
   }, [state, operator, world.status]);
   const onText = useCallback((t: string) => operator.whisper(target, t), [operator, target]);
   const talk = usePushToTalk(mic, onText, refresh);
-  useEffect(() => onTalking?.(talk.state === "listening"), [talk.state, onTalking]);
+  // Voices pause while the operator talks (agents keep acting); a short cue marks pause and resume.
+  const wasTalking = useRef(false);
+  useEffect(() => {
+    const on = talk.state === "listening";
+    onTalking?.(on);
+    if (on !== wasTalking.current) talkSound(on ? "pause" : "resume");
+    wasTalking.current = on;
+  }, [talk.state, onTalking]);
 
   useEffect(() => {
     const typing = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement;
