@@ -2,7 +2,9 @@
 
 Oct 31, 2026 · @Shivam
 
-> Team split: **Person A = Shivam** (`shared/`, `actors/`, `server/`) · **Person B = teammate** (`web/`). See [TEAM.md](TEAM.md) for the task split, handoffs and coordination rules.
+> Team split: **Person A = Shivam** (`shared/`, `actors/`, `server/`; Windows + WSL2) · **Person B = teammate** (`web/`; macOS). See [TEAM.md](TEAM.md) for the task split, handoffs and coordination rules.
+>
+> **Machines:** the plan below was written for Windows + WSL2. On the Mac, run everything natively in the macOS terminal and skip every WSL step. **The demo is recorded on the teammate's Mac**, so the full stack and all agent CLIs must be installed and proven there (checklist in TEAM.md).
 
 ## How to use this plan (instructions for Claude Code)
 
@@ -10,7 +12,7 @@ Build Hollow Manor exactly as specified below, in the build order in the timelin
 
 - Read the whole plan before writing code, then create a task list from the build order and tick items off as you go.
 - **Verify every SDK call against the live docs before using it.** The Agent Relay and Durable Actors snippets here come from their docs this morning; both projects release often. Sources: [Agent Relay docs](https://agentrelay.com/docs), [Agent Relay repo](https://github.com/AgentWorkforce/relay), [Durable Actors repo](https://github.com/TerseAI/durable-actors) (read its TypeScript guide in `docs/reference/typescript-guide.md`).
-- Everything runs inside WSL2 (Ubuntu), in the Linux filesystem (`~/hollow-manor`), never under `/mnt/c`.
+- On Windows, everything runs inside WSL2 (Ubuntu), in the Linux filesystem (`~/hollow-manor`), never under `/mnt/c`. On macOS, everything runs natively. Keep code portable between the two (POSIX shell, LF line endings, no hardcoded OS paths).
 - **Gates are hard stops.** If a gate fails, switch to the fallback named for it. Never spend more than 20 minutes stuck on one integration.
 - Keep the game engine a pure TypeScript module with unit tests. LLMs never decide whether an action succeeds; the engine does.
 - Commit after every milestone with a clear message, so you can roll back before the demo.
@@ -43,6 +45,8 @@ Prize fit: the hosts want projects using Durable Actors and Agent Relay, with bo
 ## Setup checklist (before 11:00, no project code)
 
 Install and log in to everything now; write no project code until 11:00, because the rules require all code to be created at the event.
+
+On the Mac, read "inside WSL" as "natively in the macOS terminal", skip the WSL and Windows-browser items, and put the OpenAI key in `~/.zshrc`. The Mac needs every item on this list, because it is the demo machine.
 
 - [ ] WSL2 with Ubuntu working; open a WSL terminal and work in `~`.
 - [ ] Node.js 22.19+ inside WSL (`node -v`).
@@ -353,7 +357,7 @@ Mid-run, you press Ctrl+C on the `durable-actors dev` terminal, the manor goes d
 3. The orchestrator survives the outage: agent action messages that arrive while the actor is down are queued, not dropped, and flushed in order on reconnect. Agents just see a slower Manor reply. Never restart the orchestrator, because it owns the agents.
 4. The actor appends a `resumed` event on reload, which the UI shows as "The manor stirs. State restored at rev N."
 
-**For the recording:** keep the WSL terminal visible in a corner of the screen (or cut to it), so viewers see the real Ctrl+C and restart, not a fake animation.
+**For the recording** (on the Mac): keep the terminal visible in a corner of the screen (or cut to it), so viewers see the real Ctrl+C and restart, not a fake animation.
 
 **Fallback if Gate D fails** (local dev does not persist across restarts): demo resilience instead by closing and reopening the browser tab mid-run (state is server-side) and by showing the observability UI with the actor's persisted state. Say less about crash recovery in the pitch; do not fake it.
 
@@ -389,7 +393,8 @@ The biggest risk is agents being slow or looping; the second is either SDK misbe
 | The Medium reads the bookshelf too early | n/a: it is hidden until the collapse | Already designed out |
 | One-circuit rule causes failed runs | Electrician switches before the bookshelf is read | Set `ONE_CIRCUIT = false` |
 | Model rate limits or credit exhaustion | 429 errors | Switch the Electrician to a Claude agent; keep runs short; stop runs you are not recording |
-| Windows browser cannot reach WSL | Gate D page will not load | Use the WSL IP from `hostname -I` instead of localhost |
+| Windows browser cannot reach WSL (Shivam's dev machine only) | Local page will not load | Use the WSL IP from `hostname -I` instead of localhost |
+| Works on WSL but not on the Mac (demo machine) | First run on the Mac fails | Reproduce Gate R and Gate D on the Mac before 1:20; from 2:15 do every run on the Mac |
 | UI scope creep | Animations unfinished at 2:45 | Freeze at 3:00; the list of what to drop is in the timeline section |
 | No clean run by 3:15 | Takes keep failing | Record the scripted bot run, clearly labelled "scripted replay" on screen, plus the best partial LLM run. Never pass scripted runs off as live agents |
 

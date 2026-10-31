@@ -7,13 +7,14 @@ Hackathon project (Haunted Hacks, Oct 31 2026; submission closes 4:00pm). Three 
 2. [TEAM.md](TEAM.md) — who owns which folder, the interface contract between halves, handoff times, gate status.
 
 **Find out which person you are working for** (ask if unclear):
-- **Person A (Shivam):** owns `shared/`, `actors/`, `server/`, `spikes/relay/`.
-- **Person B (teammate):** owns `web/`, `spikes/durable-counter/`.
+- **Person A (Shivam, on Windows + WSL2):** owns `shared/`, `actors/`, `server/`, `spikes/relay/`.
+- **Person B (teammate, on the Mac):** owns `web/`, `spikes/durable-counter/`.
 
 **Hard rules**
 - Edit only files in your person's folders. Never edit the other person's folders; ask instead.
 - `shared/types.ts` is frozen at 12:00; changing it afterwards needs both people's agreement.
-- Everything runs in WSL2 (Ubuntu) in the Linux filesystem (`~/hollow-manor`), not under `/mnt/c`.
+- Two machines: Shivam is on **Windows**, so everything there runs in WSL2 (Ubuntu) in the Linux filesystem (`~/hollow-manor`), never under `/mnt/c`. The teammate is on **macOS** and runs everything natively in the Mac terminal; no WSL. **The demo is recorded on the Mac**, so the full stack (actor, server, web, agent CLIs) must run there.
+- Keep code and scripts portable across Linux (WSL) and macOS: POSIX shell only, no Windows paths, no GNU-only flags, `os.tmpdir()`/`path.join` instead of hardcoded paths. Line endings are LF (see `.gitattributes`).
 - Verify every Agent Relay and Durable Actors API against the live docs before using it (links in PLAN.md); the snippets in the plan may be out of date.
 - Game logic lives only in `shared/engine.ts` as pure, unit-tested functions (`bun test`). LLMs never decide whether an action succeeds.
 - Gates are hard stops; on failure switch to the named fallback. Never spend more than 20 minutes stuck on one integration.

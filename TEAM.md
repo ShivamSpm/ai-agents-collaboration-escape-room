@@ -4,19 +4,33 @@ Two people, two Claude Code (or Codex) sessions, one repo. The full spec is [PLA
 
 | | Person A: **Shivam** | Person B: **teammate** |
 | --- | --- | --- |
+| Machine | Windows 11 + WSL2 (Ubuntu) | macOS (native) · **demo machine** |
 | Owns | `shared/`, `actors/`, `server/`, `spikes/relay/` | `web/`, `spikes/durable-counter/` |
 | In one line | Game engine, Durable Actor, Agent Relay orchestrator, prompts | The 2D map, feed, cards, operator bar, animations, end card |
 | Gate | **Gate R** (Agent Relay spike) | **Gate D** (Durable Actors persistence spike) |
-| After 3:00 | Record takes, cut video, Devpost write-up | Crash rehearsal, pick best take, screenshots, README, Devpost images |
+| After 3:00 | Operate the runs during takes (start, whisper, collapse, crash), cut video, Devpost write-up | Drives OBS on the Mac, crash rehearsal, pick best take, screenshots, README, Devpost images |
 
-## Setup (both, inside WSL)
+## Setup
 
 ```bash
 git clone https://github.com/ShivamSpm/ai-agents-collaboration-escape-room.git ~/hollow-manor
 cd ~/hollow-manor
 ```
 
-Work in the WSL Linux filesystem, never under `/mnt/c` (see the setup checklist in PLAN.md).
+- **Shivam (Windows):** run the clone and everything else inside a WSL terminal, in the Linux filesystem, never under `/mnt/c`.
+- **Teammate (Mac):** run it in the normal macOS terminal. No WSL. Install Bun, Node 22.19+ and Durable Actors natively.
+
+## Demo machine: the Mac
+
+The video is recorded on the teammate's Mac, so the **whole stack must run there**, not only `web/`:
+
+- [ ] On the Mac, install and log in to Claude Code, Codex CLI and the Agent Relay CLI (`agent-relay --version`), and export the OpenAI event key in the shell profile (`~/.zshrc`). Do this early, in a spare minute before 1:00, not at 2:15.
+- [ ] OBS (or the macOS screen recorder) set to 1920x1080, 30fps; one 10-second test recording. Focus / Do Not Disturb on.
+- [ ] Rerun the Gate D counter check **on the Mac** (it already runs there if the spike was done on the Mac).
+- [ ] Rerun the Gate R relay spike **on the Mac** once (`spikes/relay/`, ~5 minutes) after Shivam pushes it, so CLI spawning is proven on the demo machine.
+- [ ] From ~2:15, all prompt-tuning runs and every recorded take happen on the Mac. Shivam pushes fixes; the Mac pulls and reruns.
+
+Each of us runs the full stack locally while developing. Do not point the Mac UI at Shivam's WSL backend over the network; WSL networking makes that unreliable. Before ~1:00 the teammate only needs `web/` with fake data; after that, the actor + server with the scripted bot (`POST /api/run/scripted`), which needs no LLMs.
 
 ## Ownership rules
 
@@ -49,7 +63,8 @@ All of these are specified in PLAN.md; this is the short list Person B builds ag
 | 11:45 | A → B | **Gate R result** (fill in below): does Relay CLI spawning work, or are we on `AGENT_DRIVER=lite`? |
 | 12:00 | A | `shared/types.ts` frozen. |
 | ~1:00 | A → B | `HauntedHouse` actor runnable + `shared/scripted.ts`. B switches from the fake event stream to the real actor socket, driven by the scripted bot (`POST /api/run/scripted`). |
-| ~2:15 | A → B | First full LLM run. B checks every animation against real agent timing. |
+| by 1:20 | A → B | Relay spike reproduced on the Mac (demo machine). |
+| ~2:15 | A → B | First full LLM run, **on the Mac**. B checks every animation against real agent timing. |
 | 3:00 | both | **Feature freeze.** Bug fixes only. |
 
 Until ~1:00, Person B builds against a hard-coded `World` and a timer-driven fake event stream inside `web/` (e.g. `web/src/fake/`), shaped exactly like `shared/types.ts`. Delete or keep it behind a flag once the real socket works.
@@ -57,7 +72,7 @@ Until ~1:00, Person B builds against a hard-coded `World` and a timer-driven fak
 ## Gate status (update and push when known)
 
 - **Gate R (Agent Relay, Person A):** _pending_ — pass = Claude + Codex agents chat on a channel, one DMs `Manor`, reply arrives in < 15s.
-- **Gate D (Durable Actors, Person B):** _pending_ — pass = counter actor value survives Ctrl+C and restart of `durable-actors dev`, shown in a Windows browser.
+- **Gate D (Durable Actors, Person B):** _pending_ — pass = counter actor value survives Ctrl+C and restart of `durable-actors dev`, shown in a browser on the Mac.
 - **Decisions taken:** _none yet_ (e.g. "AGENT_DRIVER=lite", "ONE_CIRCUIT=false", "dropped crash claim").
 
 ## If one of us falls behind
