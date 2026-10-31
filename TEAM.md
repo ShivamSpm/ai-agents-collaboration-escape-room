@@ -74,7 +74,7 @@ Until ~1:00, Person B builds against a hard-coded `World` and a timer-driven fak
 ## Gate status (update and push when known)
 
 - **Gate R (Agent Relay, Person A):** _pending_ — pass = Claude + Codex agents chat on a channel, one DMs `Manor`, reply arrives in < 15s.
-- **Gate D (Durable Actors, Person B):** _pending_ — pass = counter actor value survives Ctrl+C and restart of `durable-actors dev`, shown in a browser on the Mac.
+- **Gate D (Durable Actors, Person B):** **PASS (11:40, on the Mac with `terse actor dev`)**: the counter survived Ctrl+C and restart, and the browser reconnected by itself. Backend calls `actors.X.prepareWebsocket({ actorId, metadata })` → `{ websocketUrl }`, and direct method calls (`actors.X.get(id).method()`) also work. Details: [spikes/durable-counter/FINDINGS.md](spikes/durable-counter/FINDINGS.md).
 - **Decisions taken:** _none yet_ (e.g. "AGENT_DRIVER=lite", "ONE_CIRCUIT=false", "dropped crash claim").
 
 ## If one of us falls behind
