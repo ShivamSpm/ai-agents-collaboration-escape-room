@@ -40,10 +40,11 @@ export function Rooms({ world }: { world: World }) {
             />
             <text
               x={r.x + 12}
-              y={r.y + 22}
-              fill={lit ? "#f5d9a8" : "#5d6573"}
+              y={r.y + 28}
+              fill={lit ? "#f5d9a8" : "#7a8391"}
               fontFamily="JetBrains Mono, monospace"
-              fontSize={12}
+              fontSize={17}
+              fontWeight={600}
               letterSpacing="0.14em"
               style={{ textTransform: "uppercase", transition: "fill 400ms" }}
             >
@@ -119,7 +120,8 @@ export function Rubble({ world }: { world: World }) {
         textAnchor="middle"
         fill="#ef4444"
         fontFamily="JetBrains Mono, monospace"
-        fontSize={13}
+        fontSize={16}
+        fontWeight={700}
         letterSpacing="0.2em"
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.9 }}
