@@ -29,7 +29,7 @@ export function HouseMap({ world, batch, speaking }: { world: World; batch: Fres
     <motion.svg
       animate={shake}
       // Dollhouse tilt: the floor plan leans back in perspective; everything inside still animates in 2D.
-      style={{ rotateX: TILT, transformPerspective: 1600, originY: 0.72, scale: 1.1 }}
+      style={{ rotateX: TILT, transformPerspective: 1600, originY: 0.72, scale: 1.08 }}
       viewBox={`${-PAD} ${-PAD} ${MAP_W + PAD * 2} ${MAP_H + PAD * 2}`}
       className="h-full w-full overflow-visible"
       role="img"
