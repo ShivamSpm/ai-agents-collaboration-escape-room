@@ -1,7 +1,7 @@
 // The 2D house: one SVG, layered rooms -> walls -> doors -> objects -> agents -> messages.
 import { motion, useAnimationControls } from "motion/react";
 import { useEffect } from "react";
-import { AGENT_IDS } from "../../../shared/map";
+import { AGENT_IDS, AGENTS, MANOR } from "../../../shared/map";
 import type { World } from "../../../shared/types";
 import { MANOR_SIGIL, MAP_H, MAP_W } from "../lib/geometry";
 import type { FreshBatch } from "../state/useFreshEntries";
@@ -14,7 +14,7 @@ import { Rooms, Rubble, Walls } from "./Rooms";
 const PAD = 24;
 const TILT = 24;
 
-export function HouseMap({ world, batch }: { world: World; batch: FreshBatch }) {
+export function HouseMap({ world, batch, speaking }: { world: World; batch: FreshBatch; speaking: string | null }) {
   const shake = useAnimationControls();
 
   useEffect(() => {
@@ -56,16 +56,16 @@ export function HouseMap({ world, batch }: { world: World; batch: FreshBatch }) 
       <Walls world={world} />
       <Doors world={world} />
       <Objects world={world} />
-      <ManorSigil />
+      <ManorSigil speaking={speaking === MANOR} />
       {AGENT_IDS.map((id, i) => (
-        <AgentToken key={id} world={world} agent={id} index={i} />
+        <AgentToken key={id} world={world} agent={id} index={i} speaking={speaking === AGENTS[id].relayName} />
       ))}
       <Messages world={world} batch={batch} />
     </motion.svg>
   );
 }
 
-function ManorSigil() {
+function ManorSigil({ speaking }: { speaking: boolean }) {
   const { x, y } = MANOR_SIGIL;
   return (
     <g>
@@ -75,8 +75,8 @@ function ManorSigil() {
         r={40}
         fill="#ef4444"
         filter="url(#glow)"
-        animate={{ opacity: [0.15, 0.35, 0.15] }}
-        transition={{ duration: 3, repeat: Infinity }}
+        animate={{ opacity: speaking ? [0.35, 0.8, 0.35] : [0.15, 0.35, 0.15] }}
+        transition={{ duration: speaking ? 0.6 : 3, repeat: Infinity }}
       />
       <circle cx={x} cy={y} r={30} fill="#0b0d12" stroke="#ef4444" strokeWidth={2} />
       <path

@@ -8,7 +8,7 @@ import { GLYPHS } from "./Glyphs";
 
 const SECONDS_PER_ROOM = 0.5;
 
-export function AgentToken({ world, agent, index }: { world: World; agent: AgentId; index: number }) {
+export function AgentToken({ world, agent, index, speaking }: { world: World; agent: AgentId; index: number; speaking: boolean }) {
   const meta = AGENTS[agent];
   const state = world.agents[agent];
   const slot = agentSlot(world, agent);
@@ -39,6 +39,16 @@ export function AgentToken({ world, agent, index }: { world: World; agent: Agent
     <motion.g style={{ x, y }}>
       <motion.g animate={{ y: [0, -3, 0] }} transition={{ duration: 2.4, repeat: Infinity, delay: index * 0.6, ease: "easeInOut" }}>
         <circle r={26} fill={meta.color} opacity={0.22} filter="url(#glow)" />
+        {speaking && (
+          <motion.circle
+            r={22}
+            fill="none"
+            stroke={meta.color}
+            strokeWidth={2}
+            animate={{ r: [20, 34], opacity: [0.9, 0] }}
+            transition={{ duration: 0.9, repeat: Infinity, ease: "easeOut" }}
+          />
+        )}
         <circle r={17} fill="#0b0d12" stroke={meta.color} strokeWidth={2} />
         <Glyph size={17} color={meta.color} />
         <text y={34} textAnchor="middle" fill={meta.color} fontSize={11} fontWeight={600} fontFamily="JetBrains Mono, monospace" letterSpacing="0.08em">
