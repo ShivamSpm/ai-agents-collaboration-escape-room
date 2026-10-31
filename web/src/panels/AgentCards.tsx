@@ -36,11 +36,11 @@ export function AgentCards({ world }: { world: World }) {
             </svg>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-[17px] font-semibold" style={{ color: meta.color }}>{meta.relayName}</span>
-                <span className="text-sm text-muted">{meta.role}</span>
+                <span className="text-[20px] font-semibold" style={{ color: meta.color }}>{meta.relayName}</span>
+                <span className="text-[15px] text-muted">{meta.role}</span>
                 <span className="ml-auto rounded-md border border-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted">{meta.runsOn}</span>
               </div>
-              <div className="mt-1 flex items-center gap-2 font-mono text-[12px]">
+              <div className="mt-1 flex items-center gap-2 font-mono text-[14px]">
                 <span className="rounded bg-white/5 px-1.5 py-0.5 text-bone">{ROOMS[world.agents[id].room].name}</span>
                 {last ? (
                   <span className={`truncate ${last.ok ? "text-bone/80" : "text-blood"}`}>
