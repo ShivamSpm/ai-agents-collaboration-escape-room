@@ -26,7 +26,11 @@ export function call<T>(fn: (house: House) => Promise<T>): Promise<T> {
                 down = false
                 return result
             } catch (err) {
-                if ((err as Error)?.name === "ActorInvocationError") throw err
+                // The client reports an unreachable actor server as ActorInvocationError "unavailable", or
+                // "outcome_unknown" if the call may have gone out. Retry those (a replayed move/unlock is harmless);
+                // anything else is a real error from actor code.
+                const code = (err as { code?: string })?.code
+                if ((err as Error)?.name === "ActorInvocationError" && code !== "unavailable" && code !== "outcome_unknown") throw err
                 if (!down) console.log(`[actor] unreachable, queueing calls: ${(err as Error)?.message ?? err}`)
                 down = true
                 await sleep(1000)
