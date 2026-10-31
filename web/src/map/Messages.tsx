@@ -7,6 +7,11 @@ import { agentSlot, MANOR_SIGIL, OPERATOR_POINT } from "../lib/geometry";
 import type { FreshBatch } from "../state/useFreshEntries";
 
 type Particle = { key: string; from: Point; to: Point; color: string };
+
+/** Seconds a message takes to fly from sender to recipient. */
+const FLIGHT = 1.1;
+/** Head first, then progressively smaller and fainter tail dots. */
+const TAIL = Array.from({ length: 9 }, (_, i) => ({ r: 8 - i * 0.7, o: 1 - i * 0.1 }));
 type Bubble = { key: string; at: Point; text: string; color: string };
 
 export function colorFor(name: string) {
@@ -60,16 +65,41 @@ export function Messages({ world, batch }: { world: World; batch: FreshBatch }) 
   return (
     <g>
       {particles.map((p) => (
-        <motion.circle
-          key={p.key}
-          r={6}
-          fill={p.color}
-          filter="url(#glow)"
-          initial={{ cx: p.from.x, cy: p.from.y, opacity: 0 }}
-          animate={{ cx: p.to.x, cy: p.to.y, opacity: [0, 1, 1, 0] }}
-          transition={{ duration: 0.9, ease: "easeInOut" }}
-          onAnimationComplete={() => setParticles((cur) => cur.filter((x) => x.key !== p.key))}
-        />
+        <g key={p.key}>
+          {/* Faint beam along the route, in the sender's colour. */}
+          <motion.line
+            x1={p.from.x}
+            y1={p.from.y}
+            x2={p.to.x}
+            y2={p.to.y}
+            stroke={p.color}
+            strokeWidth={2}
+            strokeLinecap="round"
+            initial={{ pathLength: 0, opacity: 0.5 }}
+            animate={{ pathLength: 1, opacity: [0.5, 0.35, 0] }}
+            transition={{ duration: FLIGHT + 0.5, ease: "easeInOut" }}
+          />
+          {/* Comet: a bright head followed by a fading tail of smaller dots. */}
+          {TAIL.map((t, i) => (
+            <motion.circle
+              key={i}
+              r={t.r}
+              fill={p.color}
+              filter={i === 0 ? "url(#glow)" : undefined}
+              initial={{ cx: p.from.x, cy: p.from.y, opacity: 0 }}
+              animate={{ cx: p.to.x, cy: p.to.y, opacity: [0, t.o, t.o, 0] }}
+              transition={{ duration: FLIGHT, delay: i * 0.045, ease: "easeInOut" }}
+              onAnimationComplete={i === TAIL.length - 1 ? () => setParticles((cur) => cur.filter((x) => x.key !== p.key)) : undefined}
+            />
+          ))}
+          <motion.circle
+            r={3}
+            fill="#fff"
+            initial={{ cx: p.from.x, cy: p.from.y, opacity: 0 }}
+            animate={{ cx: p.to.x, cy: p.to.y, opacity: [0, 1, 1, 0] }}
+            transition={{ duration: FLIGHT, ease: "easeInOut" }}
+          />
+        </g>
       ))}
       <AnimatePresence>
         {Object.values(bubbles).map((b) => (
