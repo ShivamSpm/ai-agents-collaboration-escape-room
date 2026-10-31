@@ -4,13 +4,17 @@ import { useEffect, useRef } from "react";
 import { MANOR, OPERATOR } from "../../../shared/map";
 import type { World } from "../../../shared/types";
 import { colorFor } from "../map/Messages";
+import { effectiveTo, isJsonBounce } from "../lib/replies";
 
 export function RelayFeed({ world }: { world: World }) {
   const scroller = useRef<HTMLDivElement>(null);
   const rows = world.log
     .map((entry, i) => ({ entry, key: `${world.runId}:${i}` }))
     // Actions are mirrored as messages; "resumed" also fires on idle wake-ups, and real crashes get their own banner.
-    .filter(({ entry }) => entry.kind !== "action" && !(entry.kind === "event" && entry.event === "resumed"));
+    .filter(
+      ({ entry }) =>
+        entry.kind !== "action" && !(entry.kind === "event" && entry.event === "resumed") && !(entry.kind === "message" && isJsonBounce(entry)),
+    );
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -47,11 +51,11 @@ export function RelayFeed({ world }: { world: World }) {
                   {entry.private && <span title="private">🔒</span>}
                   <span style={{ color: colorFor(entry.from) }}>{entry.from}</span>
                   <span className="text-muted">→</span>
-                  <span style={{ color: entry.to.startsWith("#") ? "#7d8796" : colorFor(entry.to) }}>{entry.to}</span>
+                  <span style={{ color: effectiveTo(entry).startsWith("#") ? "#7d8796" : colorFor(effectiveTo(entry)) }}>{effectiveTo(entry)}</span>
                 </div>
                 <div
                   className={`mt-0.5 ${entry.from === MANOR ? "italic text-red-200/90" : entry.from === OPERATOR ? "text-white" : "text-bone/90"} ${
-                    entry.to === MANOR ? "font-mono text-[14px] text-bone/60" : ""
+                    effectiveTo(entry) === MANOR ? "font-mono text-[14px] text-bone/60" : ""
                   }`}
                 >
                   {entry.text}

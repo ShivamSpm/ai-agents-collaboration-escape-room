@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CHANNEL, MANOR, OPERATOR, agentIdFromRelayName } from "../../../shared/map";
 import type { AgentId, LogEntry } from "../../../shared/types";
+import { effectiveTo } from "../lib/replies";
 import type { FreshBatch } from "../state/useFreshEntries";
 
 type Line = { speaker: string; text: string; queuedAt: number };
@@ -15,7 +16,10 @@ const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, "").repl
 
 export function shouldSpeak(e: LogEntry): e is Extract<LogEntry, { kind: "message" }> {
   if (e.kind !== "message" || e.private) return false;
-  if (agentIdFromRelayName(e.from)) return e.to === CHANNEL || e.to === OPERATOR;
+  if (agentIdFromRelayName(e.from)) {
+    const to = effectiveTo(e);
+    return to === CHANNEL || to === OPERATOR;
+  }
   return e.from === MANOR && e.to === CHANNEL;
 }
 
