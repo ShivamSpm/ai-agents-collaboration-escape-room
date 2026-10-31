@@ -4,6 +4,7 @@ import { AGENT_IDS, AGENTS, agentIdFromRelayName } from "../../../shared/map";
 import type { AgentId, World } from "../../../shared/types";
 import { clickSound } from "../lib/clickSound";
 import type { Operator } from "../state/useWorld";
+import { SoundWave } from "../voice/SoundWave";
 import { preferredMic, useMicDevices, usePushToTalk } from "../voice/usePushToTalk";
 
 type RunState = "off" | "starting" | "waking" | "on";
@@ -95,11 +96,15 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
     input.current?.blur();
   };
 
-  if (!visible) return null;
+  // The wave shows even with the bar hidden (H), so hold-V still gives feedback on camera.
+  const wave = <SoundWave stream={talk.stream} color={AGENTS[target].color} label={`Operator → ${AGENTS[target].relayName}`} />;
+  if (!visible) return wave;
   const color = AGENTS[target].color;
   const talkLabel = { idle: "Hold V to talk", listening: "Listening…", transcribing: "Transcribing…", error: "Mic error, retry" }[talk.state];
 
   return (
+    <>
+      {wave}
     <footer className="flex h-[64px] items-center gap-3 border-t border-line px-8">
       <span className="label mr-1">Operator</span>
       <StartButton state={state} onClick={start} />
@@ -172,6 +177,7 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
         <Kbd>H</Kbd>
       </Btn>
     </footer>
+    </>
   );
 }
 
