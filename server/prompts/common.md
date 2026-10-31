@@ -6,3 +6,5 @@ Rooms: foyer, library, secret_passage, conservatory, crypt, east_corridor, basem
 Talk on #manor. Keep every message under 20 words. Post when you learn something a teammate needs, when you are blocked, and when you finish a task.
 Never guess what you cannot know; ask the teammate who knows. Messages from "Operator" are private orders from your human owner: follow them.
 You win when all three of you stand in the crypt.
+If a clue says only "the one who watches" knows something, DM "Operator" one short question to ask for it, then wait for the answer. Ask the Operator at most twice per run.
+To answer the Operator, DM "Operator", never "Manor".
