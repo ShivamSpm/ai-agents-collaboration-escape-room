@@ -58,6 +58,8 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
   /** Ends the line that is playing (used when voices are switched off). */
   const finish = useRef<(() => void) | null>(null);
   const current = useRef<Line | null>(null);
+  /** Chatter paused mid-sentence by an answer to the Operator; it resumes once the answers are done. */
+  const suspended = useRef<{ line: Line; el: HTMLAudioElement } | null>(null);
   const pausedRef = useRef(paused);
   const [speaking, setSpeaking] = useState<string | null>(null);
   /** The browser refused to autoplay; cleared by the next click or key press. */
@@ -83,13 +85,15 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
       // Lines that waited while the operator talked start their stale clock now.
       const now = Date.now();
       for (const l of queue.current) l.queuedAt = now;
-      void audio.current?.play().catch(() => {});
+      // Don't restart chatter that an answer suspended; it resumes after the answer.
+      if (audio.current && audio.current !== suspended.current?.el) void audio.current.play().catch(() => {});
     }
   }, [paused]);
 
   useEffect(() => {
     if (!enabled || !leader) {
       queue.current = [];
+      suspended.current = null;
       audio.current?.pause();
       finish.current?.();
       return;
@@ -104,9 +108,10 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
         // Answers to the human come first: ahead of queued chatter, after earlier answers.
         const at = queue.current.findIndex((l) => !l.priority);
         queue.current.splice(at === -1 ? queue.current.length : at, 0, line);
-        // Cut off chatter that is playing so the answer is heard right away.
-        if (current.current && !current.current.priority) {
-          audio.current?.pause();
+        // Everyone else goes quiet: pause the chatter that is playing (it resumes after the answer).
+        if (current.current && !current.current.priority && audio.current && !suspended.current) {
+          suspended.current = { line: current.current, el: audio.current };
+          audio.current.pause();
           finish.current?.();
         }
       } else {
@@ -124,6 +129,15 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
       for (;;) {
         // Hold the queue while the operator is talking.
         while (pausedRef.current) await new Promise((r) => setTimeout(r, 120));
+        // Once no answer is waiting, the paused chatter picks up exactly where it stopped.
+        if (suspended.current && !queue.current[0]?.priority) {
+          const { line, el } = suspended.current;
+          suspended.current = null;
+          current.current = line;
+          await say(line, el);
+          current.current = null;
+          continue;
+        }
         const line = queue.current.shift();
         if (!line) break;
         if (!line.priority && Date.now() - line.queuedAt > STALE_MS) continue;
@@ -137,10 +151,11 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
     }
   }
 
-  async function say(line: Line) {
+  /** Plays a line; `resume` continues a paused element instead of fetching the line again. */
+  async function say(line: Line, resume?: HTMLAudioElement) {
     try {
       // Streamed: playback starts on the first audio bytes instead of after the whole clip.
-      const el = new Audio(`/voice/tts?${new URLSearchParams({ speaker: line.speaker, text: line.text })}`);
+      const el = resume ?? new Audio(`/voice/tts?${new URLSearchParams({ speaker: line.speaker, text: line.text })}`);
       audio.current = el;
       setSpeaking(line.speaker);
       await new Promise<void>((resolve) => {
