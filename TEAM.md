@@ -73,7 +73,7 @@ Until ~1:00, Person B builds against a hard-coded `World` and a timer-driven fak
 
 ## Gate status (update and push when known)
 
-- **Gate R (Agent Relay, Person A):** _pending_ — pass = Claude + Codex agents chat on a channel, one DMs `Manor`, reply arrives in < 15s.
+- **Gate R (Agent Relay, Person A):** **PASS (12:45, WSL, Agent Relay 15.0.1)**: Medium (Claude Code, haiku) and Electrician (Codex) each posted on `#manor`, DMed `Manor` a JSON action, and reacted to Manor's reply in 3.0s and 3.9s; whole run 20s. CLI agents stay (no lite fallback). Spike: [spikes/relay/spike.ts](spikes/relay/spike.ts). Setup on the Mac, once: install the CLI, then `agent-relay init` (local server on `127.0.0.1:8787`, key in `~/.agentworkforce/relay/workspaces.json`). Gotchas the code already handles: spawn agents one at a time; free agent names at startup; start Claude agents with `--setting-sources project,local` (init's global SessionStart hook otherwise makes them stop and ask whether to join Relay); kill leftover `agent-relay-broker` processes after a run.
 - **Gate D (Durable Actors, Person B):** **PASS (11:40, on the Mac with `terse actor dev`)**: the counter survived Ctrl+C and restart, and the browser reconnected by itself. Backend calls `actors.X.prepareWebsocket({ actorId, metadata })` → `{ websocketUrl }`, and direct method calls (`actors.X.get(id).method()`) also work. Details: [spikes/durable-counter/FINDINGS.md](spikes/durable-counter/FINDINGS.md).
 - **Decisions taken:** _none yet_ (e.g. "AGENT_DRIVER=lite", "ONE_CIRCUIT=false", "dropped crash claim").
 
