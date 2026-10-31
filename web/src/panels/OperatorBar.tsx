@@ -1,4 +1,5 @@
 // Operator controls. Hotkeys: S start, C collapse, W type a whisper, hold V to talk, H hide/show this bar.
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AGENT_IDS, AGENTS, agentIdFromRelayName } from "../../../shared/map";
 import type { AgentId, World } from "../../../shared/types";
@@ -98,6 +99,39 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
     wasTalking.current = on;
   }, [talk.state, onTalking]);
 
+  // M / E / L (or clicking a portrait) picks who you talk to; a short label confirms it on screen.
+  const [selected, setSelected] = useState<{ id: number; agent: AgentId } | null>(null);
+  const select = useCallback((agent: AgentId) => {
+    clickSound("on");
+    setPicked(agent);
+    setOverride(true);
+    setSelected({ id: Date.now(), agent });
+  }, []);
+  useEffect(() => {
+    if (!selected) return;
+    const t = setTimeout(() => setSelected(null), 1400);
+    return () => clearTimeout(t);
+  }, [selected]);
+  const selectedLabel = (
+    <AnimatePresence>
+      {selected && (
+        <motion.div
+          key={selected.id}
+          initial={{ opacity: 0, y: 10, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.5 } }}
+          className="pointer-events-none absolute left-[652px] top-[150px] z-40 flex -translate-x-1/2 items-center gap-3 rounded-2xl border-2 bg-ink/90 px-5 py-2.5 backdrop-blur"
+          style={{ borderColor: AGENTS[selected.agent].color, boxShadow: `0 0 24px ${AGENTS[selected.agent].color}55` }}
+        >
+          <img src={portraitFor(selected.agent)} alt="" className="size-10 rounded-full border-2 object-cover object-top" style={{ borderColor: AGENTS[selected.agent].color }} />
+          <span className="font-mono text-xl font-bold uppercase tracking-[0.2em]" style={{ color: AGENTS[selected.agent].color }}>
+            {AGENTS[selected.agent].relayName} selected
+          </span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   useEffect(() => {
     const typing = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement;
     const onDown = (e: KeyboardEvent) => {
@@ -106,7 +140,10 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
       if (k === "v") {
         e.preventDefault();
         if (!e.repeat) void talk.start();
-      } else if (k === "s") start();
+      } else if (k === "m") select("medium");
+      else if (k === "e") select("electrician");
+      else if (k === "l") select("locksmith");
+      else if (k === "s") start();
       else if (k === "c") operator.collapse();
       else if (k === "h") onToggle();
       else if (k === "w") {
@@ -124,7 +161,7 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
     };
-  }, [operator, visible, onToggle, talk, start]);
+  }, [operator, visible, onToggle, talk, start, select]);
 
   const whisper = () => {
     if (!text.trim()) return;
@@ -135,13 +172,20 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
 
   // The wave shows even with the bar hidden (H), so hold-V still gives feedback on camera.
   const wave = <SoundWave stream={talk.stream} color={AGENTS[target].color} label={`Operator → ${AGENTS[target].relayName}`} />;
-  if (!visible) return wave;
+  if (!visible)
+    return (
+      <>
+        {wave}
+        {selectedLabel}
+      </>
+    );
   const color = AGENTS[target].color;
   const talkLabel = { idle: "Hold V to talk", listening: "Listening…", transcribing: "Transcribing…", error: "Mic error, retry" }[talk.state];
 
   return (
     <>
       {wave}
+      {selectedLabel}
     <footer className="flex h-[64px] items-center gap-3 border-t border-line px-8">
       <span className="label mr-1">Operator</span>
       <StartButton state={state} onClick={start} />
@@ -181,12 +225,8 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
                 key={id}
                 role="radio"
                 aria-checked={on}
-                title={`Talk to the ${AGENTS[id].relayName}`}
-                onClick={() => {
-                  clickSound("on");
-                  setPicked(id);
-                  setOverride(true);
-                }}
+                title={`Talk to the ${AGENTS[id].relayName} (${AGENTS[id].relayName[0]})`}
+                onClick={() => select(id)}
                 className={`relative rounded-full transition-all ${on ? "scale-110" : "opacity-45 grayscale hover:opacity-80 hover:grayscale-0"}`}
               >
                 <img
@@ -196,6 +236,9 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
                   style={{ borderColor: c, boxShadow: on ? `0 0 14px ${c}` : "none" }}
                 />
                 {on && <span className="absolute -bottom-1 left-1/2 size-1.5 -translate-x-1/2 rounded-full" style={{ background: c }} />}
+                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-ink font-mono text-[9px] font-bold" style={{ color: c, border: `1px solid ${c}` }}>
+                  {AGENTS[id].relayName[0]}
+                </span>
               </button>
             );
           })}
