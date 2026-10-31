@@ -30,7 +30,13 @@ export function HintCard({ world }: { world: World }) {
               {meta.relayName} asks the Operator
             </div>
             <div className="mt-1.5 text-[19px] leading-snug text-bone">“{pending.text}”</div>
-            <div className="mt-2 font-mono text-[11px] uppercase tracking-widest text-muted">Hold V to answer by voice · or type below</div>
+            <div className="mt-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-muted">
+              <span>Hold V to answer by voice · or type below</span>
+              {/* The operator is "the one who watches": these are the codes only they hold. */}
+              <span className="rounded-md border border-candle/50 px-2 py-0.5 text-[13px] text-candle">
+                Answer: {world.collapsed && world.cluesRead.includes("bookshelf") ? "0666" : "1031"}
+              </span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

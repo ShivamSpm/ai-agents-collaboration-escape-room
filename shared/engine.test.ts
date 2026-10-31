@@ -72,7 +72,10 @@ describe("collapse and replan", () => {
 
   test("bookshelf, secret door, circuit C, escape through the passage", () => {
     let w = operator(upToGate(), "collapse", T).world;
-    expect(text(w, "medium", { action: "inspect", object: "bookshelf" })).toContain("0666");
+    // The keypad code is withheld: agents must ask the Operator for 0666.
+    const shelf = text(w, "medium", { action: "inspect", object: "bookshelf" });
+    expect(shelf).toContain("The watcher keeps this code");
+    expect(shelf).not.toContain("0666");
     w = act(w, "medium", { action: "inspect", object: "bookshelf" });
 
     w = act(w, "locksmith", { action: "move", to: "library" });

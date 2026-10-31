@@ -38,9 +38,10 @@ export const CLUES: Record<ObjectId, string> = {
   portrait: 'Under the varnish, fresh ink: "The scholar\'s room wakes on the second circuit."',
   // The date is torn out on purpose: the agents must ask the Operator, which puts the human in the loop on camera.
   ledger:
-    'The last entry is torn away. Scrawled beneath: "The gate opens on the night the dead walk. Only the one who watches knows that date. Ask them."',
+    'The last entry is torn away. Scrawled beneath: "The crypt gate answers only to the watcher\'s secret number. Ask the one who watches."',
   bookshelf:
-    'A red book slides out. Behind it, a keypad marked 0666. Scratched below: "Past the glasshouse, the iron door obeys only the third circuit."',
+    // The keypad code is withheld too: the agents must ask the Operator a second time.
+    'A red book slides out. Behind it, a hidden door with a keypad; its number is scratched out. Below: "The watcher keeps this code. Past the glasshouse, the iron door obeys only the third circuit."',
 };
 
 export const KICKOFF =
