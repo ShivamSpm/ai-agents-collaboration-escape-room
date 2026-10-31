@@ -57,6 +57,7 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
   const audio = useRef<HTMLAudioElement | null>(null);
   /** Ends the line that is playing (used when voices are switched off). */
   const finish = useRef<(() => void) | null>(null);
+  const current = useRef<Line | null>(null);
   const pausedRef = useRef(paused);
   const [speaking, setSpeaking] = useState<string | null>(null);
   /** The browser refused to autoplay; cleared by the next click or key press. */
@@ -98,7 +99,19 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
       const id = `${entry.from}:${normalize(entry.text)}`;
       if (spoken.current.has(id)) continue;
       spoken.current.add(id);
-      queue.current.push({ speaker: entry.from, text: entry.text, queuedAt: Date.now(), priority: effectiveTo(entry) === OPERATOR });
+      const line = { speaker: entry.from, text: entry.text, queuedAt: Date.now(), priority: effectiveTo(entry) === OPERATOR };
+      if (line.priority) {
+        // Answers to the human come first: ahead of queued chatter, after earlier answers.
+        const at = queue.current.findIndex((l) => !l.priority);
+        queue.current.splice(at === -1 ? queue.current.length : at, 0, line);
+        // Cut off chatter that is playing so the answer is heard right away.
+        if (current.current && !current.current.priority) {
+          audio.current?.pause();
+          finish.current?.();
+        }
+      } else {
+        queue.current.push(line);
+      }
     }
     void drain();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,7 +127,9 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
         const line = queue.current.shift();
         if (!line) break;
         if (!line.priority && Date.now() - line.queuedAt > STALE_MS) continue;
+        current.current = line;
         await say(line);
+        current.current = null;
       }
     } finally {
       playing.current = false;
