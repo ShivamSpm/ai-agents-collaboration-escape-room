@@ -85,3 +85,27 @@ export function collapseSound() {
     // Audio unavailable; the shake and banner still show.
   }
 }
+
+/** Push-to-talk cue: a soft falling "hush" when voices pause, a rising chime when they resume. */
+export function talkSound(kind: "pause" | "resume") {
+  try {
+    ctx ??= new AudioContext();
+    const t = ctx.currentTime;
+    const notes = kind === "pause" ? [660, 440] : [440, 660];
+    notes.forEach((f, i) => {
+      const at = t + i * 0.07;
+      const o = ctx!.createOscillator();
+      const g = ctx!.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(f, at);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.18, at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.12);
+      o.connect(g).connect(ctx!.destination);
+      o.start(at);
+      o.stop(at + 0.14);
+    });
+  } catch {
+    // Audio unavailable; the sound wave still shows.
+  }
+}

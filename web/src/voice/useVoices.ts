@@ -7,7 +7,8 @@ import type { AgentId, LogEntry } from "../../../shared/types";
 import { effectiveTo } from "../lib/replies";
 import type { FreshBatch } from "../state/useFreshEntries";
 
-type Line = { speaker: string; text: string; queuedAt: number };
+/** `priority` lines (answers to the Operator) are never dropped as stale. */
+type Line = { speaker: string; text: string; queuedAt: number; priority: boolean };
 
 /** Lines that waited longer than this are dropped so the voices never lag the map. */
 const STALE_MS = 10_000;
@@ -48,11 +49,15 @@ function useVoiceLeader() {
   return leader;
 }
 
-export function useVoices(batch: FreshBatch, enabled: boolean) {
+/** `paused` while the operator holds push-to-talk: the current line pauses, the queue waits, nothing is lost. */
+export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
   const queue = useRef<Line[]>([]);
   const spoken = useRef(new Set<string>());
   const playing = useRef(false);
   const audio = useRef<HTMLAudioElement | null>(null);
+  /** Ends the line that is playing (used when voices are switched off). */
+  const finish = useRef<(() => void) | null>(null);
+  const pausedRef = useRef(paused);
   const [speaking, setSpeaking] = useState<string | null>(null);
   /** The browser refused to autoplay; cleared by the next click or key press. */
   const [blocked, setBlocked] = useState(false);
@@ -70,9 +75,22 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
   }, [blocked]);
 
   useEffect(() => {
+    pausedRef.current = paused;
+    if (paused) {
+      audio.current?.pause();
+    } else {
+      // Lines that waited while the operator talked start their stale clock now.
+      const now = Date.now();
+      for (const l of queue.current) l.queuedAt = now;
+      void audio.current?.play().catch(() => {});
+    }
+  }, [paused]);
+
+  useEffect(() => {
     if (!enabled || !leader) {
       queue.current = [];
       audio.current?.pause();
+      finish.current?.();
       return;
     }
     for (const { entry } of batch.items) {
@@ -80,7 +98,7 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
       const id = `${entry.from}:${normalize(entry.text)}`;
       if (spoken.current.has(id)) continue;
       spoken.current.add(id);
-      queue.current.push({ speaker: entry.from, text: entry.text, queuedAt: Date.now() });
+      queue.current.push({ speaker: entry.from, text: entry.text, queuedAt: Date.now(), priority: effectiveTo(entry) === OPERATOR });
     }
     void drain();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,8 +108,12 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
     if (playing.current) return;
     playing.current = true;
     try {
-      for (let line = queue.current.shift(); line; line = queue.current.shift()) {
-        if (Date.now() - line.queuedAt > STALE_MS) continue;
+      for (;;) {
+        // Hold the queue while the operator is talking.
+        while (pausedRef.current) await new Promise((r) => setTimeout(r, 120));
+        const line = queue.current.shift();
+        if (!line) break;
+        if (!line.priority && Date.now() - line.queuedAt > STALE_MS) continue;
         await say(line);
       }
     } finally {
@@ -107,7 +129,9 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
       audio.current = el;
       setSpeaking(line.speaker);
       await new Promise<void>((resolve) => {
-        el.onended = el.onerror = el.onpause = () => resolve();
+        // A pause (operator talking) does not end the line; it resumes where it stopped.
+        finish.current = resolve;
+        el.onended = el.onerror = () => resolve();
         el.play().catch((err: unknown) => {
           if (err instanceof DOMException && err.name === "NotAllowedError") setBlocked(true);
           resolve();
