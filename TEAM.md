@@ -52,6 +52,8 @@ All of these are specified in PLAN.md; this is the short list Person B builds ag
 | `POST /api/run/start`, `/collapse`, `/whisper {agent,text}`, `/reset`, `/scripted` | A | PLAN.md › Operator API |
 | `resumed` event in `world.log` after an actor restart | A | PLAN.md › Crash and resume |
 
+**Pushed and ready to import** (`shared/types.ts`, `shared/map.ts`): beyond the plan, `map.ts` also gives the UI `OBJECTS` (clue icon positions), `AGENTS` (relay name, role, model, glyph, color), `createWorld(runId)` (a valid lobby `World` for fake state), and `ONE_CIRCUIT` / `MAX_ACTIONS_PER_AGENT` config. `ActorIn`/`ActorOut` type the socket messages; operator messages carry a `requestId` and get an `operatorResult` reply.
+
 **Ports (proposed, change together if the tools pick others):** web (Vite) `5173`, server (Express) `3001`, actor runtime: whatever `durable-actors dev` uses by default. Vite proxies `/api` to `localhost:3001`.
 
 ## Handoffs (when the halves meet)
