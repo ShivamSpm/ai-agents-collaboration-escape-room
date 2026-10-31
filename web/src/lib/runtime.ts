@@ -5,10 +5,10 @@ import type { AgentId } from "../../../shared/types";
 
 export type Runtime = { cli: string; model: string };
 
-// Demo Mac: Medium on Claude Code (server default, Sonnet); the other two on Codex's default model
+// Demo Mac: Medium on Claude Code with MEDIUM_MODEL=haiku; the other two on Codex's default model
 // (GPT-6.1 Sol, seen in the agents' worker logs).
 const DEFAULTS: Record<AgentId, Runtime> = {
-  medium: { cli: "Claude Code", model: "Sonnet" },
+  medium: { cli: "Claude Code", model: "Haiku" },
   electrician: { cli: "Codex", model: "GPT-6.1 Sol" },
   locksmith: { cli: "Codex", model: "GPT-6.1 Sol" },
 };
