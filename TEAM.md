@@ -92,6 +92,8 @@ Until ~1:00, Person B builds against a hard-coded `World` and a timer-driven fak
 
 ## Running the full stack (Mac or WSL)
 
+Full step-by-step guide with a manual test plan and troubleshooting: **[DEMO.md](DEMO.md)**. Short version:
+
 One-time: Bun, Node 22, Claude Code and Codex logged in, `OPENAI_API_KEY` set, `bunx terse-cli@latest install`, the Agent Relay CLI installer, then `agent-relay init`.
 
 ```bash

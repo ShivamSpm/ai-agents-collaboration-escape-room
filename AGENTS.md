@@ -5,6 +5,7 @@ Hackathon project (Haunted Hacks, Oct 31 2026; submission closes 4:00pm). Three 
 **Read before doing anything:**
 1. [PLAN.md](PLAN.md) — the full spec: game design, actor, Relay orchestration, UI, timeline, gates, fallbacks. Build exactly what it says, in its build order.
 2. [TEAM.md](TEAM.md) — who owns which folder, the interface contract between halves, handoff times, gate status.
+3. [DEMO.md](DEMO.md) — how to run the whole demo (actor, orchestrator, web) and test it by hand.
 
 **Find out which person you are working for** (ask if unclear):
 - **Person A (Shivam, on Windows + WSL2):** owns `shared/`, `actors/`, `server/`, `spikes/relay/`.
