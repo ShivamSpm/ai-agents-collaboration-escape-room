@@ -34,7 +34,7 @@ export default function App() {
   const [barVisible, setBarVisible] = useState(true);
   const toggleBar = useCallback(() => setBarVisible((v) => !v), []);
   const [voicesOn, setVoicesOn] = useState(true);
-  const { speaking } = useVoices(batch, voicesOn);
+  const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn);
   const hintAgent = hintState(world).pending?.agent;
   const scale = useStageScale();
 
@@ -51,6 +51,11 @@ export default function App() {
               <HouseMap world={world} batch={batch} speaking={speaking} />
               <CollapseBanner batch={batch} />
               <HintCard world={world} />
+              {voicesBlocked && (
+                <div className="absolute left-4 top-4 z-20 animate-pulse rounded-xl border border-candle/70 bg-ink/90 px-4 py-2 font-mono text-[13px] uppercase tracking-widest text-candle">
+                  🔇 The browser blocked the voices: click anywhere to turn them on
+                </div>
+              )}
             </div>
             <Objectives world={world} />
           </section>
