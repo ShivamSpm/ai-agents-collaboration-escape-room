@@ -1,0 +1,21 @@
+{
+  "name": "hollow-manor-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "terse actor generate --language typescript",
+    "start": "bun index.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-relay/harness-driver": "15.0.1",
+    "@agent-relay/harnesses": "15.0.1",
+    "@agent-relay/sdk": "15.0.1",
+    "terse-sdk": "0.14.9",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.23",
+    "typescript": "~5.9.3"
+  }
+}
