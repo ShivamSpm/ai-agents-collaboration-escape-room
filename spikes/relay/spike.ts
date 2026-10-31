@@ -78,10 +78,11 @@ const cwd = (name: string) => {
 };
 
 log("spawning Medium (Claude Code) and Electrician (Codex)...");
-const [medium, electrician] = await Promise.all([
-  claude.create({ relay, name: "Medium", model: "haiku", channels: ["manor"], cwd: cwd("Medium"), task: task("Medium") }),
-  codex.create({ relay, name: "Electrician", channels: ["manor"], cwd: cwd("Electrician"), task: task("Electrician") }),
-]);
+// Sequential on purpose: the first create() starts the broker, later ones attach to it.
+// In parallel, both try to start a broker under the same name and one gets a 409.
+const medium = await claude.create({ relay, name: "Medium", model: "haiku", channels: ["manor"], cwd: cwd("Medium"), task: task("Medium") });
+log("Medium spawned");
+const electrician = await codex.create({ relay, name: "Electrician", channels: ["manor"], cwd: cwd("Electrician"), task: task("Electrician") });
 log("spawned:", medium.name, electrician.name);
 
 function report() {
