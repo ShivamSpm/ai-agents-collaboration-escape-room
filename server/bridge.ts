@@ -101,14 +101,16 @@ export class Bridge {
         return { ok: true }
     }
 
+    /**
+     * Resets the world. After a live run it also asks for a process restart: Relay will not let this process
+     * re-register Manor while its old client is still connected, but a fresh process (via run.sh) can.
+     */
     async reset() {
         this.scriptCtrl?.abort()
         this.scriptCtrl = null
-        if (this.relay.spawned) {
-            await this.relay.stopAgents()
-            await this.init() // fresh Relay client; the old one's broker is gone
-        }
+        const restart = this.relay.spawned
+        if (restart) await this.relay.stopAgents()
         await call((h) => h.operator("reset"))
-        return { ok: true }
+        return { ok: true, restart }
     }
 }

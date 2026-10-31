@@ -44,8 +44,14 @@ Bun.serve({
                     const b = await body(req)
                     return Response.json(await bridge.whisper(b.agent as AgentId, String(b.text ?? "")))
                 }
-                case "/api/run/reset":
-                    return Response.json(await bridge.reset())
+                case "/api/run/reset": {
+                    const r = await bridge.reset()
+                    if (r.restart) {
+                        console.log("[server] restarting for a fresh Relay session (run.sh brings it back)")
+                        setTimeout(() => process.exit(0), 300)
+                    }
+                    return Response.json(r)
+                }
                 default:
                     return new Response("not found", { status: 404 })
             }
