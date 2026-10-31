@@ -10,8 +10,10 @@ import type { FreshBatch } from "../state/useFreshEntries";
 /** `priority` lines (answers to the Operator) are never dropped as stale. */
 type Line = { speaker: string; text: string; queuedAt: number; priority: boolean };
 
-/** Lines that waited longer than this are dropped so the voices never lag the map. */
-const STALE_MS = 10_000;
+/** Chatter that waited longer than this is dropped so the voices stay in sync with the map. */
+const STALE_MS = 6_000;
+/** At most this many chatter lines wait; older ones are dropped when agents talk faster than speech. */
+const MAX_CHATTER = 2;
 
 const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 
@@ -71,7 +73,11 @@ function useVoiceLeader() {
 }
 
 /** `paused` while the operator holds push-to-talk: the current line pauses, the queue waits, nothing is lost. */
-export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
+/**
+ * `runKey` changes on Reset and on each new run (e.g. runId + startedAt): everything queued or playing from
+ * the previous game is dropped so old lines never leak into the new one.
+ */
+export function useVoices(batch: FreshBatch, enabled: boolean, paused = false, runKey = "") {
   const queue = useRef<Line[]>([]);
   const spoken = useRef(new Set<string>());
   const playing = useRef(false);
@@ -111,6 +117,16 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
     }
   }, [paused]);
 
+  // New game or Reset: stop the current line and forget everything from the previous run.
+  useEffect(() => {
+    queue.current = [];
+    suspended.current?.el.pause();
+    suspended.current = null;
+    audio.current?.pause();
+    finish.current?.();
+    spoken.current.clear();
+  }, [runKey]);
+
   useEffect(() => {
     if (!enabled || !leader) {
       queue.current = [];
@@ -137,6 +153,10 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
         }
       } else {
         queue.current.push(line);
+        // Keep only the newest chatter so speech stays close to what the map shows.
+        while (queue.current.filter((l) => !l.priority).length > MAX_CHATTER) {
+          queue.current.splice(queue.current.findIndex((l) => !l.priority), 1);
+        }
       }
     }
     void drain();
@@ -154,6 +174,11 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
         if (suspended.current && !queue.current[0]?.priority) {
           const { line, el } = suspended.current;
           suspended.current = null;
+          // Chatter that was interrupted long ago is no longer worth finishing.
+          if (Date.now() - line.queuedAt > STALE_MS * 2) {
+            el.pause();
+            continue;
+          }
           current.current = line;
           await say(line, el);
           current.current = null;
@@ -193,10 +218,6 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
     }
   }
 
-  // Forget spoken lines when the run resets.
-  useEffect(() => {
-    if (batch.items.some(({ entry }) => entry.kind === "event" && entry.event === "start")) spoken.current.clear();
-  }, [batch]);
 
   const speakingAgent: AgentId | undefined = speaking ? agentIdFromRelayName(speaking) : undefined;
   return { speaking, speakingAgent, blocked: blocked && leader };

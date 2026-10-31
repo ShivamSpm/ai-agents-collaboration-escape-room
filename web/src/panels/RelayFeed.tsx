@@ -137,9 +137,15 @@ export function RelayFeed({ world }: { world: World }) {
   const rows = present ? all.slice(-PRESENT_ROWS) : all;
   const latestChat = [...rows].reverse().find(({ entry }) => entry.kind === "message")?.key;
 
+  // Always follow the newest message: on every world update (presentation mode keeps the row count fixed),
+  // and again once the new row's entry animation has settled so it never stops short of the bottom.
   useEffect(() => {
-    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
-  }, [rows.length, details]);
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    const settle = setTimeout(() => el.scrollTo({ top: el.scrollHeight }), 350);
+    return () => clearTimeout(settle);
+  }, [world.rev, rows.length, details, present]);
 
   return (
     <div className="glass flex min-h-0 flex-1 flex-col">
