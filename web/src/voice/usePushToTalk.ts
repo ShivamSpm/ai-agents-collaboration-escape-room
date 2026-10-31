@@ -39,6 +39,8 @@ export function useMicDevices() {
 
 export function usePushToTalk(deviceId: string, onText: (text: string) => void, onPermission?: () => void) {
   const [state, setState] = useState<TalkState>("idle");
+  /** The live mic stream while listening, for the on-screen sound wave. */
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
 
@@ -49,11 +51,13 @@ export function usePushToTalk(deviceId: string, onText: (text: string) => void, 
         audio: { deviceId: deviceId ? { exact: deviceId } : undefined, echoCancellation: true, noiseSuppression: true },
       });
       onPermission?.();
+      setStream(stream);
       const rec = new MediaRecorder(stream);
       chunks.current = [];
       rec.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        setStream(null);
         recorder.current = null;
         const blob = new Blob(chunks.current, { type: rec.mimeType || "audio/webm" });
         if (blob.size < 2000) return setState("idle"); // a tap, not speech
@@ -79,5 +83,5 @@ export function usePushToTalk(deviceId: string, onText: (text: string) => void, 
     if (recorder.current?.state === "recording") recorder.current.stop();
   }, []);
 
-  return { state, start, stop };
+  return { state, stream, start, stop };
 }
