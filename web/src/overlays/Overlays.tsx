@@ -11,11 +11,15 @@ import type { Connection } from "../state/useWorld";
 function useEventBanner(batch: FreshBatch, event: string, ms: number) {
   const [shownAt, setShownAt] = useState<number | null>(null);
   useEffect(() => {
-    if (!batch.items.some(({ entry }) => entry.kind === "event" && entry.event === event)) return;
-    setShownAt(batch.id);
+    if (batch.items.some(({ entry }) => entry.kind === "event" && entry.event === event)) setShownAt(batch.id);
+  }, [batch, event]);
+  // The hide timer lives in its own effect: tied to the batch, every later message cancelled it and the
+  // banner never went away.
+  useEffect(() => {
+    if (shownAt === null) return;
     const t = setTimeout(() => setShownAt(null), ms);
     return () => clearTimeout(t);
-  }, [batch, event, ms]);
+  }, [shownAt, ms]);
   return shownAt !== null;
 }
 

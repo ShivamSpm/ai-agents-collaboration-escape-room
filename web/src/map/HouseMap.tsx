@@ -13,7 +13,8 @@ import { Objects } from "./Objects";
 import { Rooms, Rubble, Walls } from "./Rooms";
 
 const PAD = 24;
-const TILT = 24;
+// A slight lean: a steeper tilt shortens the plan and left an empty band above it (the panel is width-limited).
+const TILT = 6;
 
 export function HouseMap({ world, batch, speaking }: { world: World; batch: FreshBatch; speaking: string | null }) {
   const shake = useAnimationControls();
@@ -29,7 +30,8 @@ export function HouseMap({ world, batch, speaking }: { world: World; batch: Fres
     <motion.svg
       animate={shake}
       // Dollhouse tilt: the floor plan leans back in perspective; everything inside still animates in 2D.
-      style={{ rotateX: TILT, transformPerspective: 1600, originY: 0.62, scale: 1.04 }}
+      // Scale and pivot fill the 1320px panel with ~8px to spare in presentation mode, and still fit the shorter full view.
+      style={{ rotateX: TILT, transformPerspective: 1600, originY: 0.8, scale: 1.06 }}
       viewBox={`${-PAD} ${-PAD} ${MAP_W + PAD * 2} ${MAP_H + PAD * 2}`}
       className="h-full w-full overflow-visible"
       role="img"
