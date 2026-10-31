@@ -32,6 +32,16 @@ export class Bridge {
         const agent = agentIdFromRelayName(m.from)
         if (m.channel) {
             await this.mirror(m.from, `#${m.channel}`, m.text)
+            // Relay 15 delivers one agent's channel posts to the Codex agent but not to Claude agents (they only
+            // hear Manor), so Manor forwards teammates' posts to them. Not mirrored: the feed already has the post.
+            if (agent) {
+                for (const id of AGENT_IDS) {
+                    if (id === agent || AGENTS[id].runsOn !== "Claude Code") continue
+                    await this.relay
+                        .send(MANOR, AGENTS[id].relayName, `(teammate chat, not a Manor reply) #manor ${m.from}: ${m.text}`)
+                        .catch((e) => console.error("[relay] forward failed", e))
+                }
+            }
             return
         }
         // Every DM we can see is addressed to Manor (or Operator); treat it as an action attempt.
