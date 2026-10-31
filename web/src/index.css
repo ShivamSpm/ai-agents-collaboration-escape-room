@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Neon-glass chrome (dark, teal + magenta glows) around the candlelit map from PLAN.md. */
+@theme {
+  --color-ink: #07090e;
+  --color-panel: #0d1118;
+  --color-line: #1c2430;
+  --color-bone: #d8d2c4;
+  --color-muted: #7d8796;
+  --color-teal: #00f5d4;
+  --color-magenta: #ff007f;
+  --color-candle: #f5b041;
+  --color-blood: #ef4444;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-spooky: "Creepster", "Outfit", cursive;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(circle at 10% 12%, rgb(0 245 212 / 0.09) 0%, transparent 42%),
+    radial-gradient(circle at 90% 18%, rgb(255 0 127 / 0.09) 0%, transparent 42%),
+    radial-gradient(circle at 50% 110%, rgb(245 176 65 / 0.06) 0%, transparent 50%);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+
+/* Glass card with a soft glowing edge. */
+.glass {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.01));
+  border: 1px solid rgb(0 245 212 / 0.16);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.4) inset,
+    0 0 24px rgb(0 245 212 / 0.05);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+}
+
+/* Uppercase mono section label. */
+.label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-teal);
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
