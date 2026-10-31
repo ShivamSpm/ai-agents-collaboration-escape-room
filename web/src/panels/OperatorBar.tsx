@@ -26,11 +26,13 @@ type Props = {
   hintAgent?: AgentId;
   voicesOn: boolean;
   onToggleVoices(): void;
+  musicOn: boolean;
+  onToggleMusic(): void;
   /** True while push-to-talk is held, so the agents' voices pause. */
   onTalking?(on: boolean): void;
 };
 
-export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voicesOn, onToggleVoices, onTalking }: Props) {
+export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voicesOn, onToggleVoices, musicOn, onToggleMusic, onTalking }: Props) {
   const [picked, setPicked] = useState<AgentId>("locksmith");
   const [text, setText] = useState("");
   const [mic, setMic] = useState("");
@@ -230,6 +232,7 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
           ))}
       </select>
       <Btn onClick={onToggleVoices}>{voicesOn ? "🔊 Voices" : "🔇 Muted"}</Btn>
+      <Btn onClick={onToggleMusic}>{musicOn ? "🎃 Music" : "🎃 Off"}</Btn>
       <button
         onClick={() => {
           clickSound("off");
