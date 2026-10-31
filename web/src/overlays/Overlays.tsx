@@ -1,6 +1,6 @@
 // Collapse banner, crash ("the manor has gone silent"), resume banner, and the end card.
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { World } from "../../../shared/types";
 import { clickSound } from "../lib/clickSound";
 import { formatDuration } from "../panels/TopBar";
@@ -10,15 +10,16 @@ import type { Connection } from "../state/useWorld";
 /** Shows a banner for `ms` whenever a matching event arrives. */
 function useEventBanner(batch: FreshBatch, event: string, ms: number) {
   const [shownAt, setShownAt] = useState<number | null>(null);
-  // The hide timer lives in a ref: later batches (more chat) must not cancel it and leave the banner stuck.
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
-    if (!batch.items.some(({ entry }) => entry.kind === "event" && entry.event === event)) return;
-    setShownAt(batch.id);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setShownAt(null), ms);
-  }, [batch, event, ms]);
-  useEffect(() => () => clearTimeout(timer.current), []);
+    if (batch.items.some(({ entry }) => entry.kind === "event" && entry.event === event)) setShownAt(batch.id);
+  }, [batch, event]);
+  // The hide timer lives in its own effect: tied to the batch, every later message cancelled it and the
+  // banner never went away.
+  useEffect(() => {
+    if (shownAt === null) return;
+    const t = setTimeout(() => setShownAt(null), ms);
+    return () => clearTimeout(t);
+  }, [shownAt, ms]);
   return shownAt !== null;
 }
 

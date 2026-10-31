@@ -6,6 +6,7 @@ import { AGENTS, agentIdFromRelayName, MANOR, OPERATOR } from "../../../shared/m
 import type { LogEntry, World } from "../../../shared/types";
 import { portraitFor } from "../map/AgentToken";
 import { colorFor } from "../map/Messages";
+import { usePresentation } from "../lib/presentation";
 import { effectiveTo, isJsonAction, isJsonBounce } from "../lib/replies";
 import { actionSentence, showResult } from "../lib/story";
 
@@ -24,6 +25,15 @@ function storyRow(e: LogEntry): boolean {
   if (e.from === MANOR) return false; // action replies (on the action row) and announcements (shown as events)
   return true;
 }
+
+/** Presentation mode: the story minus walking (the map shows moves); only clue, power and unlock actions. */
+function presentRow(e: LogEntry): boolean {
+  if (e.kind === "action" && e.ok && e.action.action === "move") return false;
+  return storyRow(e);
+}
+
+/** Presentation mode shows only the latest rows, larger. */
+const PRESENT_ROWS = 7;
 
 /** Details mode: the previous full log. Actions appear as their mirrored JSON messages. */
 function detailRow(e: LogEntry): boolean {
@@ -63,7 +73,7 @@ function Route({ m }: { m: Message }) {
   );
 }
 
-function ChatRow({ m, latest }: { m: Message; latest: boolean }) {
+function ChatRow({ m, latest, big }: { m: Message; latest: boolean; big: boolean }) {
   return (
     <div
       className={`flex gap-3 rounded-lg border-l-[3px] px-3 py-2 transition-colors ${latest ? "bg-white/[0.06]" : ""}`}
@@ -72,7 +82,7 @@ function ChatRow({ m, latest }: { m: Message; latest: boolean }) {
       <Avatar name={m.from} />
       <div className="min-w-0 flex-1">
         <Route m={m} />
-        <div className={`mt-0.5 text-[18px] leading-snug ${m.from === OPERATOR ? "text-white" : "text-bone"}`}>{m.text}</div>
+        <div className={`mt-0.5 leading-snug ${big ? "text-[20px]" : "text-[18px]"} ${m.from === OPERATOR ? "text-white" : "text-bone"}`}>{m.text}</div>
       </div>
     </div>
   );
@@ -118,10 +128,13 @@ function DetailMessage({ m }: { m: Message }) {
 }
 
 export function RelayFeed({ world }: { world: World }) {
-  const [details, setDetails] = useState(false);
+  const present = usePresentation();
+  const [detailsOn, setDetails] = useState(false);
+  const details = detailsOn && !present;
   const scroller = useRef<HTMLDivElement>(null);
-  const keep = details ? detailRow : storyRow;
-  const rows: Row[] = world.log.map((entry, i) => ({ entry, key: `${world.runId}:${i}` })).filter(({ entry }) => keep(entry));
+  const keep = present ? presentRow : details ? detailRow : storyRow;
+  const all: Row[] = world.log.map((entry, i) => ({ entry, key: `${world.runId}:${i}` })).filter(({ entry }) => keep(entry));
+  const rows = present ? all.slice(-PRESENT_ROWS) : all;
   const latestChat = [...rows].reverse().find(({ entry }) => entry.kind === "message")?.key;
 
   useEffect(() => {
@@ -140,13 +153,13 @@ export function RelayFeed({ world }: { world: World }) {
         </span>
         <span className="flex items-center gap-3">
           <span className="font-mono text-[12px] text-muted">{world.stats.messages} messages</span>
-          <button
+          {!present && <button
             type="button"
             onClick={() => setDetails((d) => !d)}
             className={`rounded-md border px-2 py-0.5 font-mono text-[11px] uppercase tracking-widest ${details ? "border-teal/60 text-teal" : "border-line text-muted hover:text-bone"}`}
           >
             Details
-          </button>
+          </button>}
         </span>
       </div>
       <div ref={scroller} className="scrollbar-none min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-4">
@@ -161,7 +174,7 @@ export function RelayFeed({ world }: { world: World }) {
               ) : details ? (
                 <DetailMessage m={entry} />
               ) : (
-                <ChatRow m={entry} latest={key === latestChat} />
+                <ChatRow m={entry} latest={key === latestChat} big={present} />
               )}
             </motion.div>
           ))}

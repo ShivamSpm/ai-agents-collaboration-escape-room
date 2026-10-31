@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AGENT_IDS, AGENTS, agentIdFromRelayName, CHANNEL, MANOR, OPERATOR } from "../../../shared/map";
 import type { Point, World } from "../../../shared/types";
 import { agentSlot, MANOR_SIGIL, OPERATOR_POINT } from "../lib/geometry";
+import { usePresentation } from "../lib/presentation";
 import { effectiveTo, isJsonBounce } from "../lib/replies";
 import type { FreshBatch } from "../state/useFreshEntries";
 
@@ -33,6 +34,7 @@ function pointFor(world: World, name: string): Point | undefined {
 export function Messages({ world, batch }: { world: World; batch: FreshBatch }) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [bubbles, setBubbles] = useState<Record<string, Bubble>>({});
+  const present = usePresentation();
 
   useEffect(() => {
     const ps: Particle[] = [];
@@ -56,10 +58,9 @@ export function Messages({ world, batch }: { world: World; batch: FreshBatch }) 
     }
     if (ps.length) setParticles((cur) => [...cur, ...ps]);
     if (Object.keys(bs).length) setBubbles((cur) => ({ ...cur, ...bs }));
-    const timers = Object.values(bs).map((b) =>
-      setTimeout(() => setBubbles((cur) => Object.fromEntries(Object.entries(cur).filter(([, v]) => v.key !== b.key))), 4000),
-    );
-    return () => timers.forEach(clearTimeout);
+    // Not cancelled on the next batch: that left bubbles on screen for good when messages came quickly.
+    for (const b of Object.values(bs))
+      setTimeout(() => setBubbles((cur) => Object.fromEntries(Object.entries(cur).filter(([, v]) => v.key !== b.key))), 4000);
     // Only react to new batches; world is read for positions at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batch.id]);
@@ -104,7 +105,7 @@ export function Messages({ world, batch }: { world: World; batch: FreshBatch }) 
         </g>
       ))}
       <AnimatePresence>
-        {Object.values(bubbles).map((b) => (
+        {!present && Object.values(bubbles).map((b) => (
           <motion.foreignObject
             key={b.key}
             x={b.at.x - 120}

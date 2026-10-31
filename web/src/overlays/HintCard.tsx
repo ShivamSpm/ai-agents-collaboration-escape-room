@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { AGENTS } from "../../../shared/map";
 import type { World } from "../../../shared/types";
 import { portraitFor } from "../map/AgentToken";
-import { hintState, MAX_HINTS } from "../voice/hints";
+import { hintState } from "../voice/hints";
 
 const FULL_MS = 5000;
 
 export function HintCard({ world }: { world: World }) {
-  const { left, pending } = hintState(world);
+  const { pending } = hintState(world);
   const meta = pending ? AGENTS[pending.agent] : undefined;
   const [compact, setCompact] = useState(false);
 
@@ -26,12 +26,6 @@ export function HintCard({ world }: { world: World }) {
 
   return (
     <>
-      <div className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-xl border border-line bg-ink/80 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
-        Hints
-        {Array.from({ length: MAX_HINTS }, (_, i) => (
-          <span key={i} className={`size-2.5 rounded-full ${i < left ? "bg-candle shadow-[0_0_8px_#f5b041]" : "bg-line"}`} />
-        ))}
-      </div>
       <AnimatePresence>
         {pending && meta && (
           <motion.div
