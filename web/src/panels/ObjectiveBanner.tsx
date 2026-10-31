@@ -8,7 +8,7 @@ export function ObjectiveBanner({ world }: { world: World }) {
   const color = o.alarm ? "#ef4444" : "#f5b041";
   return (
     <div
-      className="glass relative mb-3 flex h-[84px] shrink-0 items-center gap-5 overflow-hidden px-6"
+      className="glass relative mb-2 flex h-[68px] shrink-0 items-center gap-5 overflow-hidden px-6"
       style={{ borderColor: `${color}66`, boxShadow: `0 0 28px ${color}22` }}
     >
       <span className="font-mono text-[13px] uppercase tracking-[0.3em]" style={{ color }}>
@@ -23,10 +23,10 @@ export function ObjectiveBanner({ world }: { world: World }) {
           transition={{ duration: 0.35 }}
           className="min-w-0 flex-1"
         >
-          <div className="truncate font-spooky text-[34px] leading-none tracking-wide" style={{ color }}>
+          <div className="truncate font-spooky text-[28px] leading-none tracking-wide" style={{ color }}>
             {o.title.toUpperCase()}
           </div>
-          <div className="mt-1.5 truncate text-[18px] text-bone">{o.detail}</div>
+          <div className="mt-1 truncate text-[17px] text-bone">{o.detail}</div>
         </motion.div>
       </AnimatePresence>
     </div>
