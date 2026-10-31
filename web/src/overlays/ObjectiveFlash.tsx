@@ -10,7 +10,8 @@ import { OBJECTIVES } from "../panels/Objectives";
 
 type Flash = { id: number; label: string; agent?: AgentId };
 
-const HOLD_MS = 2600;
+/** Short and sweet: the label holds briefly, then melts. */
+const HOLD_MS = 1600;
 
 /** The agent behind the newest successful action or message, for the credit line. */
 function lastActor(world: World): AgentId | undefined {
@@ -60,25 +61,25 @@ export function ObjectiveFlash({ world }: { world: World }) {
           className="pointer-events-none absolute inset-0 z-40 grid place-items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 1.1 } }}
+          exit={{ opacity: 0, transition: { duration: 0.9 } }}
         >
           {/* Dim the house so the label owns the frame for a moment. */}
-          <motion.div className="absolute inset-0 bg-black/45" />
+          <motion.div className="absolute inset-0 bg-black/15" />
           <div className="relative text-center">
             {meta && flash.agent && (
               <motion.div
-                className="mb-3 flex items-center justify-center gap-3 font-mono text-xl font-bold uppercase tracking-[0.3em]"
+                className="mb-1 flex items-center justify-center gap-2 font-mono text-sm font-bold uppercase tracking-[0.25em]"
                 style={{ color }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.25 } }}
                 exit={{ opacity: 0 }}
               >
-                <img src={portraitFor(flash.agent)} alt="" className="size-12 rounded-full border-2 object-cover object-top" style={{ borderColor: color }} />
+                <img src={portraitFor(flash.agent)} alt="" className="size-8 rounded-full border-2 object-cover object-top" style={{ borderColor: color }} />
                 {meta.relayName} did it
               </motion.div>
             )}
             <motion.div
-              className="font-spooky text-[150px] uppercase leading-none"
+              className="font-spooky text-[92px] uppercase leading-none"
               style={{ color: "#c9ff9e", textShadow: `0 0 30px ${color}, 0 0 80px #6bff6b88, 0 6px 0 #1b3a12` }}
               initial={{ scale: 2.2, opacity: 0, filter: "blur(18px)", rotate: -4 }}
               animate={{
@@ -86,7 +87,7 @@ export function ObjectiveFlash({ world }: { world: World }) {
                 opacity: [0, 1, 0.75, 1, 0.85, 1],
                 filter: ["blur(18px)", "blur(0px)", "blur(0px)", "blur(0px)"],
                 rotate: [-4, 1.5, -0.8, 0],
-                transition: { duration: 0.9, ease: "easeOut" },
+                transition: { duration: 0.6, ease: "easeOut" },
               }}
               // Melts away: drips down, smears, stretches and dissolves into ectoplasm.
               exit={{
@@ -97,18 +98,10 @@ export function ObjectiveFlash({ world }: { world: World }) {
                 letterSpacing: "0.35em",
                 opacity: [1, 0.6, 0.85, 0],
                 filter: ["blur(0px)", "blur(3px)", "blur(8px)", "blur(22px)"],
-                transition: { duration: 1.1, ease: "easeIn" },
+                transition: { duration: 0.9, ease: "easeIn" },
               }}
             >
               {flash.label}
-            </motion.div>
-            <motion.div
-              className="mt-2 font-mono text-lg uppercase tracking-[0.5em] text-candle/90"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 1, 0.6, 1], transition: { delay: 0.4, duration: 1 } }}
-              exit={{ opacity: 0 }}
-            >
-              Objective complete
             </motion.div>
           </div>
         </motion.div>
