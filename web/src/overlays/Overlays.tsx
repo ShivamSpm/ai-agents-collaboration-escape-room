@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import type { World } from "../../../shared/types";
+import { clickSound } from "../lib/clickSound";
 import { formatDuration } from "../panels/TopBar";
 import type { FreshBatch } from "../state/useFreshEntries";
 import type { Connection } from "../state/useWorld";
@@ -87,7 +88,7 @@ export function CrashOverlay({ connection, world, batch }: { connection: Connect
   );
 }
 
-export function EndCard({ world }: { world: World }) {
+export function EndCard({ world, onReplay }: { world: World; onReplay(): void }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     if (world.status !== "escaped") return setShow(false);
@@ -124,7 +125,17 @@ export function EndCard({ world }: { world: World }) {
                 </div>
               ))}
             </div>
-            <div className="mt-12 font-mono text-sm uppercase tracking-[0.3em] text-muted">Built with Agent Relay + Durable Actors</div>
+            <button
+              onClick={() => {
+                clickSound("on");
+                setShow(false);
+                onReplay();
+              }}
+              className="mt-10 rounded-2xl bg-gradient-to-r from-teal to-magenta px-8 py-3 font-mono text-lg font-bold uppercase tracking-[0.2em] text-ink shadow-[0_0_30px_rgb(0_245_212/0.35)] hover:brightness-110 active:scale-95"
+            >
+              ↻ Play again
+            </button>
+            <div className="mt-8 font-mono text-sm uppercase tracking-[0.3em] text-muted">Built with Agent Relay + Durable Actors</div>
           </motion.div>
         </motion.div>
       )}

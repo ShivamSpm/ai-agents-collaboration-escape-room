@@ -56,8 +56,10 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
     if (state !== "off") return clickSound("off");
     clickSound("on");
     setPending(true);
-    operator.start();
-  }, [state, operator]);
+    // A finished run needs a reset first; replay does reset + wait + start in one press.
+    if (world.status === "escaped" || world.status === "failed") operator.replay();
+    else operator.start();
+  }, [state, operator, world.status]);
   const onText = useCallback((t: string) => operator.whisper(target, t), [operator, target]);
   const talk = usePushToTalk(mic, onText, refresh);
 

@@ -74,7 +74,7 @@ export default function App() {
           onToggleVoices={() => setVoicesOn((v) => !v)}
         />
         <CrashOverlay connection={connection} world={world} batch={batch} />
-        <EndCard world={world} />
+        <EndCard world={world} onReplay={operator.replay} />
       </div>
     </div>
   );
