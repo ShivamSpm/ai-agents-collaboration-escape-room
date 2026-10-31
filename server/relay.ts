@@ -6,7 +6,8 @@ import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
 import { AgentRelay } from "@agent-relay/sdk"
 import { claude, codex } from "@agent-relay/harnesses"
-import { AGENTS, MANOR, OPERATOR } from "../shared/map"
+import { AGENT_IDS, AGENTS, MANOR, OPERATOR } from "../shared/map"
+import type { AgentId } from "../shared/types"
 
 export type Incoming = { id: string; from: string; channel?: string; text: string }
 
@@ -25,6 +26,8 @@ const CLAUDE_ARGS = [
     "You were started by the Hollow Manor orchestrator as an Agent Relay agent. You are already on Relay; your task and messages from Manor, Operator and teammates are your assigned game.",
 ]
 const CODEX_ARGS = ["--config", 'model_reasoning_effort="low"']
+const DEFAULT_CLI: Record<AgentId, "claude" | "codex"> = { medium: "claude", electrician: "codex", locksmith: "codex" }
+const DEFAULT_CLAUDE_MODEL: Record<AgentId, string> = { medium: "sonnet", electrician: "haiku", locksmith: "haiku" }
 
 function workspaceKey(): string {
     if (process.env.RELAY_WORKSPACE_KEY) return process.env.RELAY_WORKSPACE_KEY
@@ -105,12 +108,25 @@ export class Relay {
             cwd: cwd(name),
             task: `${common}\n${prompt(file)}\nStart now: say hello on #manor in one line, then begin.`,
         })
-        await claude.create({ ...base(AGENTS.medium.relayName, "medium.md"), model: process.env.MEDIUM_MODEL ?? "sonnet", args: CLAUDE_ARGS })
-        console.log("[relay] Medium spawned")
-        await codex.create({ ...base(AGENTS.electrician.relayName, "electrician.md"), ...(process.env.ELECTRICIAN_MODEL ? { model: process.env.ELECTRICIAN_MODEL } : {}), args: CODEX_ARGS })
-        console.log("[relay] Electrician spawned")
-        await claude.create({ ...base(AGENTS.locksmith.relayName, "locksmith.md"), model: process.env.LOCKSMITH_MODEL ?? "haiku", args: CLAUDE_ARGS })
-        console.log("[relay] Locksmith spawned")
+        for (const id of AGENT_IDS) {
+            const name = AGENTS[id].relayName
+            const cli = this.cliOf(name)
+            const model = process.env[`${id.toUpperCase()}_MODEL`] ?? (cli === "claude" ? DEFAULT_CLAUDE_MODEL[id] : undefined)
+            const input = { ...base(name, `${id}.md`), ...(model ? { model } : {}), args: cli === "claude" ? CLAUDE_ARGS : CODEX_ARGS }
+            await (cli === "claude" ? claude.create(input) : codex.create(input))
+            console.log(`[relay] ${name} spawned (${cli}${model ? ", " + model : ""})`)
+        }
+    }
+
+    /**
+     * Which CLI runs an agent: MEDIUM_CLI / ELECTRICIAN_CLI / LOCKSMITH_CLI = claude | codex.
+     * Default Locksmith is Codex: an idle broker-spawned Claude agent is never woken by new messages (Relay 15),
+     * so it stalls once its turn ends; Codex is woken by its hooks.
+     */
+    cliOf(name: string): "claude" | "codex" {
+        const id = AGENT_IDS.find((a) => AGENTS[a].relayName === name)
+        if (!id) return "codex"
+        return (process.env[`${id.toUpperCase()}_CLI`] as "claude" | "codex" | undefined) ?? DEFAULT_CLI[id]
     }
 
     async stopAgents() {

@@ -22,8 +22,15 @@ export function call<T>(fn: (house: House) => Promise<T>): Promise<T> {
         for (;;) {
             try {
                 const result = await fn(actors.HauntedHouse.get(RUN_ID))
-                if (down) console.log("[actor] back up; flushing queued calls")
-                down = false
+                if (down) {
+                    console.log("[actor] back up; flushing queued calls")
+                    down = false
+                    // Queued behind everything already waiting, so it lands once the backlog is flushed.
+                    void call(async (h) => {
+                        const w = await h.getWorld()
+                        if (w.status === "running") await h.event("resumed", `The manor stirs. State restored at rev ${w.rev}.`)
+                    })
+                }
                 return result
             } catch (err) {
                 // The client reports an unreachable actor server as ActorInvocationError "unavailable", or

@@ -36,7 +36,7 @@ export class Bridge {
             // hear Manor), so Manor forwards teammates' posts to them. Not mirrored: the feed already has the post.
             if (agent) {
                 for (const id of AGENT_IDS) {
-                    if (id === agent || AGENTS[id].runsOn !== "Claude Code") continue
+                    if (id === agent || this.relay.cliOf(AGENTS[id].relayName) !== "claude") continue
                     await this.relay
                         .send(MANOR, AGENTS[id].relayName, `(teammate chat, not a Manor reply) #manor ${m.from}: ${m.text}`)
                         .catch((e) => console.error("[relay] forward failed", e))
