@@ -39,10 +39,11 @@ export function doorBetween(a: RoomId, b: RoomId): DoorId | undefined {
 }
 
 /** Spread agents sharing a room so tokens never overlap. */
+// Wide enough for the 44px tokens and their 14px name labels; the middle one sits lower so labels never touch.
 const SLOT_OFFSETS: Point[] = [
-  { x: -46, y: 10 },
-  { x: 0, y: 10 },
-  { x: 46, y: 10 },
+  { x: -96, y: 0 },
+  { x: 0, y: 24 },
+  { x: 96, y: 0 },
 ];
 
 export function agentSlot(world: World, agent: AgentId): Point {
