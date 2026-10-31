@@ -16,7 +16,7 @@ export class HauntedHouse extends Actor<null, WebIn, WebOut> {
     /** False after every process start; the first call after a restart mid-run logs "resumed". */
     @Ephemeral booted = false
 
-    private wake() {
+    private async wake() {
         if (this.booted) return
         this.booted = true
         if (this.world.status === "running") {
@@ -24,45 +24,45 @@ export class HauntedHouse extends Actor<null, WebIn, WebOut> {
         }
     }
 
-    private publish() {
+    private async publish() {
         this.broadcast({ type: "world", world: this.world })
     }
 
     async getWorld(): Promise<World> {
-        this.wake()
+        await this.wake()
         return this.world
     }
 
     async act(agent: AgentId, action: Action): Promise<{ ok: boolean; text: string }> {
-        this.wake()
+        await this.wake()
         const r = apply(this.world, agent, action)
         this.world = r.world
-        this.publish()
+        await this.publish()
         return { ok: r.ok, text: r.text }
     }
 
     async message(from: string, to: string, text: string, isPrivate: boolean): Promise<void> {
-        this.wake()
+        await this.wake()
         this.world = appendMessage(this.world, { from, to, text, private: isPrivate })
-        this.publish()
+        await this.publish()
     }
 
     async operator(op: OperatorOp): Promise<{ announce: string | null }> {
-        this.wake()
+        await this.wake()
         const r = operator(this.world, op)
         this.world = r.world
-        this.publish()
+        await this.publish()
         return { announce: r.announce ?? null }
     }
 
     async event(event: EventName, text: string): Promise<void> {
-        this.wake()
+        await this.wake()
         this.world = appendEvent(this.world, event, text)
-        this.publish()
+        await this.publish()
     }
 
     async onConnect(socket: ActorSocket<null, WebOut>) {
-        this.wake()
+        await this.wake()
         socket.send({ type: "world", world: this.world })
     }
 
