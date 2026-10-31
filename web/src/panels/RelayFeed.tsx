@@ -9,7 +9,8 @@ export function RelayFeed({ world }: { world: World }) {
   const scroller = useRef<HTMLDivElement>(null);
   const rows = world.log
     .map((entry, i) => ({ entry, key: `${world.runId}:${i}` }))
-    .filter(({ entry }) => entry.kind !== "action");
+    // Actions are mirrored as messages; "resumed" also fires on idle wake-ups, and real crashes get their own banner.
+    .filter(({ entry }) => entry.kind !== "action" && !(entry.kind === "event" && entry.event === "resumed"));
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -27,7 +28,7 @@ export function RelayFeed({ world }: { world: World }) {
         </span>
         <span className="font-mono text-[11px] text-muted">{world.stats.messages} messages</span>
       </div>
-      <div ref={scroller} className="scrollbar-none min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
+      <div ref={scroller} className="scrollbar-none min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
         {rows.length === 0 && <div className="pt-8 text-center font-mono text-sm text-muted">The manor is quiet. Press S to start.</div>}
         <AnimatePresence initial={false}>
           {rows.map(({ entry, key }) =>
@@ -36,13 +37,13 @@ export function RelayFeed({ world }: { world: World }) {
                 key={key}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="py-1 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-candle/80"
+                className="py-1.5 text-center font-mono text-[13px] uppercase tracking-[0.16em] text-candle/80"
               >
                 ✦ {entry.text}
               </motion.div>
             ) : entry.kind === "message" ? (
-              <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-[14px] leading-snug">
-                <div className="flex items-center gap-1.5 font-mono text-[11px]">
+              <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-[18px] leading-snug">
+                <div className="flex items-center gap-1.5 font-mono text-[13px] font-semibold">
                   {entry.private && <span title="private">🔒</span>}
                   <span style={{ color: colorFor(entry.from) }}>{entry.from}</span>
                   <span className="text-muted">→</span>
@@ -50,7 +51,7 @@ export function RelayFeed({ world }: { world: World }) {
                 </div>
                 <div
                   className={`mt-0.5 ${entry.from === MANOR ? "italic text-red-200/90" : entry.from === OPERATOR ? "text-white" : "text-bone/90"} ${
-                    entry.to === MANOR ? "font-mono text-[12px] text-bone/60" : ""
+                    entry.to === MANOR ? "font-mono text-[14px] text-bone/60" : ""
                   }`}
                 >
                   {entry.text}

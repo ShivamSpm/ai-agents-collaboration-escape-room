@@ -19,15 +19,33 @@ export function shouldSpeak(e: LogEntry): e is Extract<LogEntry, { kind: "messag
   return e.from === MANOR && e.to === CHANNEL;
 }
 
+/** Only one open tab speaks, or two windows on the same machine play every line twice (an echo). */
+function useVoiceLeader() {
+  const [leader, setLeader] = useState(false);
+  useEffect(() => {
+    if (!navigator.locks) return setLeader(true);
+    const ac = new AbortController();
+    navigator.locks
+      .request("hollow-manor-voices", { signal: ac.signal }, () => {
+        setLeader(true);
+        return new Promise<void>((resolve) => ac.signal.addEventListener("abort", () => resolve()));
+      })
+      .catch(() => {});
+    return () => ac.abort();
+  }, []);
+  return leader;
+}
+
 export function useVoices(batch: FreshBatch, enabled: boolean) {
   const queue = useRef<Line[]>([]);
   const spoken = useRef(new Set<string>());
   const playing = useRef(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
+  const leader = useVoiceLeader();
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !leader) {
       queue.current = [];
       audio.current?.pause();
       return;
@@ -41,7 +59,7 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
     }
     void drain();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batch.id, enabled]);
+  }, [batch.id, enabled, leader]);
 
   async function drain() {
     if (playing.current) return;

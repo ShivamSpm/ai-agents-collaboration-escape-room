@@ -37,8 +37,17 @@ export function CollapseBanner({ batch }: { batch: FreshBatch }) {
   );
 }
 
+/** Resume window: a "resumed" event only counts as a crash recovery if the socket dropped shortly before. */
+const RESUME_WINDOW_MS = 30_000;
+
 export function CrashOverlay({ connection, world, batch }: { connection: Connection; world: World; batch: FreshBatch }) {
-  const resumed = useEventBanner(batch, "resumed", 4000);
+  // Durable actors also reload after ~10s idle, and each reload logs "resumed"; only a real drop earns the banner.
+  const [lostAt, setLostAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (connection === "lost") setLostAt(Date.now());
+  }, [connection]);
+  const resumedEvent = useEventBanner(batch, "resumed", 4000);
+  const resumed = resumedEvent && lostAt !== null && Date.now() - lostAt < RESUME_WINDOW_MS;
   return (
     <>
       <AnimatePresence>
