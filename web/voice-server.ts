@@ -57,7 +57,8 @@ async function tts(req: IncomingMessage, res: ServerResponse) {
     body: JSON.stringify({
       text: text.slice(0, 300),
       model_id: "eleven_flash_v2_5",
-      voice_settings: { stability: 0.55, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: speaker === "Manor" ? 0.92 : 1.05 },
+      // 15% faster than before for a sub-2-minute demo; ElevenLabs caps speed at 1.2.
+      voice_settings: { stability: 0.55, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: speaker === "Manor" ? 1.06 : 1.2 },
     }),
   });
   if (!upstream.ok || !upstream.body) return json(res, 502, { error: `elevenlabs ${upstream.status}`, detail: await upstream.text() });
