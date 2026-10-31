@@ -27,6 +27,9 @@ const CLAUDE_ARGS = [
 ]
 const CODEX_ARGS = ["--config", 'model_reasoning_effort="low"']
 const DEFAULT_CLI: Record<AgentId, "claude" | "codex"> = { medium: "claude", electrician: "codex", locksmith: "codex" }
+// An idle broker-spawned Claude agent is not woken by new messages, so keep it inside its turn while it waits.
+const CLAUDE_STAY_AWAKE =
+    "\nNever end your turn before all three of you are in the crypt. Whenever you are waiting for a teammate or for Manor, run the shell command `sleep 3`, then check your Agent Relay inbox, and carry on. Repeat until you escape."
 const DEFAULT_CLAUDE_MODEL: Record<AgentId, string> = { medium: "sonnet", electrician: "haiku", locksmith: "haiku" }
 
 function workspaceKey(): string {
@@ -101,18 +104,19 @@ export class Relay {
             mkdirSync(d, { recursive: true })
             return d
         }
-        const base = (name: string, file: string) => ({
+        const base = (name: string, file: string, extra = "") => ({
             relay: this.relay,
             name,
             channels: [CHANNEL_NAME],
             cwd: cwd(name),
-            task: `${common}\n${prompt(file)}\nStart now: say hello on #manor in one line, then begin.`,
+            task: `${common}\n${prompt(file)}${extra}\nStart now: say hello on #manor in one line, then begin.`,
         })
         for (const id of AGENT_IDS) {
             const name = AGENTS[id].relayName
             const cli = this.cliOf(name)
             const model = process.env[`${id.toUpperCase()}_MODEL`] ?? (cli === "claude" ? DEFAULT_CLAUDE_MODEL[id] : undefined)
-            const input = { ...base(name, `${id}.md`), ...(model ? { model } : {}), args: cli === "claude" ? CLAUDE_ARGS : CODEX_ARGS }
+            const extra = cli === "claude" ? CLAUDE_STAY_AWAKE : ""
+            const input = { ...base(name, `${id}.md`, extra), ...(model ? { model } : {}), args: cli === "claude" ? CLAUDE_ARGS : CODEX_ARGS }
             await (cli === "claude" ? claude.create(input) : codex.create(input))
             console.log(`[relay] ${name} spawned (${cli}${model ? ", " + model : ""})`)
         }
