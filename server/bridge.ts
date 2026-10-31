@@ -11,7 +11,7 @@ import { Relay, type Incoming } from "./relay"
 
 export class Bridge {
     private relay = new Relay()
-    private scripted: AbortController | null = null
+    private scriptCtrl: AbortController | null = null
 
     async init() {
         await this.relay.connect((m) => void this.onRelayMessage(m).catch((e) => console.error("[bridge]", e)))
@@ -69,8 +69,8 @@ export class Bridge {
     /** Scripted replay: no LLMs, same traffic. Labelled in the log so the UI can show it. */
     async scripted() {
         if (this.relay.spawned) return { ok: false, error: "live agents running; reset first" }
-        this.scripted?.abort()
-        const ctrl = (this.scripted = new AbortController())
+        this.scriptCtrl?.abort()
+        const ctrl = (this.scriptCtrl = new AbortController())
         await call((h) => h.operator("start"))
         await call((h) => h.event("start", "SCRIPTED REPLAY: no live agents in this run."))
         const sink: ScriptSink = {
@@ -102,8 +102,8 @@ export class Bridge {
     }
 
     async reset() {
-        this.scripted?.abort()
-        this.scripted = null
+        this.scriptCtrl?.abort()
+        this.scriptCtrl = null
         if (this.relay.spawned) {
             await this.relay.stopAgents()
             await this.init() // fresh Relay client; the old one's broker is gone
