@@ -1,0 +1,14 @@
+{
+  "name": "spike-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "spike": "bun spike.ts"
+  },
+  "dependencies": {
+    "@agent-relay/harness-driver": "15.0.1",
+    "@agent-relay/harnesses": "15.0.1",
+    "@agent-relay/sdk": "15.0.1",
+    "zod": "^3.25.0"
+  }
+}
