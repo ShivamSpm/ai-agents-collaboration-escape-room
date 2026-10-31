@@ -64,7 +64,7 @@ export const AGENT_IDS = ["medium", "electrician", "locksmith"] as const satisfi
 export const AGENTS = {
   medium:      { relayName: "Medium",      role: "Reads clues",     runsOn: "Claude Code", glyph: "eye",  color: "#a78bfa" },
   electrician: { relayName: "Electrician", role: "Controls power",  runsOn: "Codex",       glyph: "bolt", color: "#facc15" },
-  locksmith:   { relayName: "Locksmith",   role: "Opens locks",     runsOn: "Claude Code", glyph: "key",  color: "#2dd4bf" },
+  locksmith:   { relayName: "Locksmith",   role: "Opens locks",     runsOn: "Codex",       glyph: "key",  color: "#2dd4bf" },
 } as const satisfies Record<AgentId, { relayName: string; role: string; runsOn: string; glyph: string; color: string }>;
 
 export const MANOR = "Manor";
