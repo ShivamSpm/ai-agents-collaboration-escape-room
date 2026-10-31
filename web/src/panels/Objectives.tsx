@@ -1,10 +1,12 @@
 // Five chips under the map that tick off as the run progresses.
 import { motion } from "motion/react";
 import type { World } from "../../../shared/types";
+import { gateCodeKnown } from "../lib/story";
 
 const OBJECTIVES: { label: string; done: (w: World) => boolean }[] = [
   { label: "Library lit", done: (w) => w.circuits.B || w.cluesRead.includes("ledger") },
-  { label: "Gate code found", done: (w) => w.cluesRead.includes("ledger") },
+  // The ledger's date is torn out; the code is found once someone actually says it.
+  { label: "Gate code found", done: gateCodeKnown },
   { label: "Gate unlocked", done: (w) => w.doors.crypt_gate.unlocked },
   { label: "Escape route found", done: (w) => w.cluesRead.includes("bookshelf") || w.doors.secret_door.unlocked },
   { label: "Escaped", done: (w) => w.status === "escaped" },
