@@ -26,9 +26,11 @@ type Props = {
   hintAgent?: AgentId;
   voicesOn: boolean;
   onToggleVoices(): void;
+  /** True while push-to-talk is held, so the agents' voices pause. */
+  onTalking?(on: boolean): void;
 };
 
-export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voicesOn, onToggleVoices }: Props) {
+export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voicesOn, onToggleVoices, onTalking }: Props) {
   const [picked, setPicked] = useState<AgentId>("locksmith");
   const [text, setText] = useState("");
   const [mic, setMic] = useState("");
@@ -84,6 +86,7 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
   }, [state, operator, world.status]);
   const onText = useCallback((t: string) => operator.whisper(target, t), [operator, target]);
   const talk = usePushToTalk(mic, onText, refresh);
+  useEffect(() => onTalking?.(talk.state === "listening"), [talk.state, onTalking]);
 
   useEffect(() => {
     const typing = (e: KeyboardEvent) => e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement;

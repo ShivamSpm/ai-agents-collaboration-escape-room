@@ -34,7 +34,8 @@ export default function App() {
   const [barVisible, setBarVisible] = useState(true);
   const toggleBar = useCallback(() => setBarVisible((v) => !v), []);
   const [voicesOn, setVoicesOn] = useState(true);
-  const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn);
+  const [talking, setTalking] = useState(false);
+  const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn, talking);
   const hintAgent = hintState(world).pending?.agent;
   const scale = useStageScale();
 
@@ -72,6 +73,7 @@ export default function App() {
           hintAgent={hintAgent}
           voicesOn={voicesOn}
           onToggleVoices={() => setVoicesOn((v) => !v)}
+          onTalking={setTalking}
         />
         <CrashOverlay connection={connection} world={world} batch={batch} />
         <EndCard world={world} onReplay={operator.replay} />
