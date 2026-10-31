@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AGENT_IDS, AGENTS, agentIdFromRelayName, CHANNEL, MANOR, OPERATOR } from "../../../shared/map";
 import type { Point, World } from "../../../shared/types";
 import { agentSlot, MANOR_SIGIL, OPERATOR_POINT } from "../lib/geometry";
+import { effectiveTo, isJsonBounce } from "../lib/replies";
 import type { FreshBatch } from "../state/useFreshEntries";
 
 type Particle = { key: string; from: Point; to: Point; color: string };
@@ -37,17 +38,18 @@ export function Messages({ world, batch }: { world: World; batch: FreshBatch }) 
     const ps: Particle[] = [];
     const bs: Record<string, Bubble> = {};
     for (const { key, entry } of batch.items) {
-      if (entry.kind !== "message") continue;
+      if (entry.kind !== "message" || isJsonBounce(entry)) continue;
+      const to = effectiveTo(entry);
       const from = pointFor(world, entry.from);
       if (!from) continue;
       const color = colorFor(entry.from);
       const targets =
-        entry.to === CHANNEL
+        to === CHANNEL
           ? AGENT_IDS.filter((id) => AGENTS[id].relayName !== entry.from).map((id) => agentSlot(world, id))
-          : [pointFor(world, entry.to)].filter((p): p is Point => !!p);
+          : [pointFor(world, to)].filter((p): p is Point => !!p);
       targets.forEach((to, i) => ps.push({ key: `${key}:${i}`, from, to, color }));
       // Bubbles for agents talking to people, not JSON actions to the Manor.
-      if (agentIdFromRelayName(entry.from) && entry.to !== MANOR) {
+      if (agentIdFromRelayName(entry.from) && to !== MANOR) {
         const text = entry.text.length > 60 ? `${entry.text.slice(0, 57)}…` : entry.text;
         bs[entry.from] = { key, at: from, text, color };
       }
