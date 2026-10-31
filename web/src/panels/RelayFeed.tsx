@@ -2,8 +2,9 @@
 // sentences; "Details" shows the full technical log (JSON actions and the Manor's complete replies).
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { AGENTS, MANOR, OPERATOR } from "../../../shared/map";
+import { AGENTS, agentIdFromRelayName, MANOR, OPERATOR } from "../../../shared/map";
 import type { LogEntry, World } from "../../../shared/types";
+import { portraitFor } from "../map/AgentToken";
 import { colorFor } from "../map/Messages";
 import { effectiveTo, isJsonAction, isJsonBounce } from "../lib/replies";
 import { actionSentence, showResult } from "../lib/story";
@@ -29,6 +30,27 @@ function detailRow(e: LogEntry): boolean {
   return e.kind !== "action" && !(e.kind === "event" && e.event === "resumed") && !(e.kind === "message" && isJsonBounce(e));
 }
 
+/** Who is talking: the agent's portrait, the Manor's sigil, or the Operator's mic. */
+function Avatar({ name }: { name: string }) {
+  const agent = agentIdFromRelayName(name);
+  const color = colorFor(name);
+  const ring = { borderColor: color, boxShadow: `0 0 10px ${color}55` };
+  if (agent || name === MANOR)
+    return (
+      <img
+        src={agent ? portraitFor(agent) : "/characters/manor.png"}
+        alt={name}
+        className="size-11 shrink-0 rounded-full border-2 object-cover object-top"
+        style={ring}
+      />
+    );
+  return (
+    <div className="grid size-11 shrink-0 place-items-center rounded-full border-2 bg-ink text-xl" style={ring}>
+      {name === OPERATOR ? "🎙" : "•"}
+    </div>
+  );
+}
+
 function Route({ m }: { m: Message }) {
   const to = effectiveTo(m);
   return (
@@ -44,11 +66,14 @@ function Route({ m }: { m: Message }) {
 function ChatRow({ m, latest }: { m: Message; latest: boolean }) {
   return (
     <div
-      className={`rounded-lg border-l-[3px] px-3 py-2 transition-colors ${latest ? "bg-white/[0.06]" : ""}`}
+      className={`flex gap-3 rounded-lg border-l-[3px] px-3 py-2 transition-colors ${latest ? "bg-white/[0.06]" : ""}`}
       style={{ borderColor: latest ? colorFor(m.from) : "transparent" }}
     >
-      <Route m={m} />
-      <div className={`mt-0.5 text-[18px] leading-snug ${m.from === OPERATOR ? "text-white" : "text-bone"}`}>{m.text}</div>
+      <Avatar name={m.from} />
+      <div className="min-w-0 flex-1">
+        <Route m={m} />
+        <div className={`mt-0.5 text-[18px] leading-snug ${m.from === OPERATOR ? "text-white" : "text-bone"}`}>{m.text}</div>
+      </div>
     </div>
   );
 }
@@ -80,10 +105,13 @@ function EventRow({ text }: { text: string }) {
 function DetailMessage({ m }: { m: Message }) {
   const to = effectiveTo(m);
   return (
-    <div className="text-[15px] leading-snug">
-      <Route m={m} />
-      <div className={`mt-0.5 ${m.from === MANOR ? "text-red-200/90" : m.from === OPERATOR ? "text-white" : "text-bone/90"} ${to === MANOR ? "font-mono text-[13px] text-bone/60" : ""}`}>
-        {m.text}
+    <div className="flex gap-3 text-[15px] leading-snug">
+      <Avatar name={m.from} />
+      <div className="min-w-0 flex-1">
+        <Route m={m} />
+        <div className={`mt-0.5 ${m.from === MANOR ? "text-red-200/90" : m.from === OPERATOR ? "text-white" : "text-bone/90"} ${to === MANOR ? "font-mono text-[13px] text-bone/60" : ""}`}>
+          {m.text}
+        </div>
       </div>
     </div>
   );

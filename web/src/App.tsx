@@ -64,7 +64,7 @@ export default function App() {
             <Objectives world={world} />
           </section>
           <aside className="flex min-h-0 flex-1 flex-col gap-4 pb-5">
-            <AgentCards world={world} />
+            <AgentCards world={world} speaking={speaking} />
             <RelayFeed world={world} />
           </aside>
         </main>
