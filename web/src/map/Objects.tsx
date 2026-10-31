@@ -29,15 +29,15 @@ export function Objects({ world }: { world: World }) {
                   fill="none"
                   stroke="#f5b041"
                   strokeWidth={2}
-                  initial={{ r: 14, opacity: 0.9 }}
-                  animate={{ r: 46, opacity: 0 }}
+                  initial={{ r: 22, opacity: 0.9 }}
+                  animate={{ r: 64, opacity: 0 }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
                 />
               )}
             </AnimatePresence>
-            <circle cx={cx} cy={cy} r={18} fill="#090b11" stroke={read ? "#f5b041" : "#3a4250"} strokeWidth={1.5} />
-            <Glyph x={cx} y={cy} size={20} color={read ? "#f5b041" : "#8a93a3"} />
-            <text x={cx} y={cy + 34} textAnchor="middle" fill={read ? "#f5d9a8" : "#5d6573"} fontSize={11} fontFamily="JetBrains Mono, monospace">
+            <circle cx={cx} cy={cy} r={26} fill="#090b11" stroke={read ? "#f5b041" : "#3a4250"} strokeWidth={1.5} />
+            <Glyph x={cx} y={cy} size={30} color={read ? "#f5b041" : "#8a93a3"} />
+            <text x={cx} y={cy + 44} textAnchor="middle" fill={read ? "#f5d9a8" : "#7d8796"} fontSize={14} fontFamily="JetBrains Mono, monospace">
               {def.name}
             </text>
           </motion.g>

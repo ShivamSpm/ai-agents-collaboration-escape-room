@@ -40,9 +40,9 @@ export function doorBetween(a: RoomId, b: RoomId): DoorId | undefined {
 
 /** Spread agents sharing a room so tokens never overlap. */
 const SLOT_OFFSETS: Point[] = [
-  { x: -46, y: 10 },
-  { x: 0, y: 10 },
-  { x: 46, y: 10 },
+  { x: -100, y: 6 },
+  { x: 0, y: 6 },
+  { x: 100, y: 6 },
 ];
 
 export function agentSlot(world: World, agent: AgentId): Point {
@@ -53,7 +53,7 @@ export function agentSlot(world: World, agent: AgentId): Point {
   // Narrow rooms stack vertically.
   if (r.w < 3 * U) {
     const i = here.indexOf(agent);
-    return { x: c.x, y: c.y - 40 + i * 40 };
+    return { x: c.x, y: c.y - 46 + i * 46 };
   }
   const offsets = here.length === 1 ? [SLOT_OFFSETS[1]] : here.length === 2 ? [SLOT_OFFSETS[0], SLOT_OFFSETS[2]] : SLOT_OFFSETS;
   const o = offsets[here.indexOf(agent)];
