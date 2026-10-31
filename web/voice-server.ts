@@ -39,6 +39,41 @@ function json(res: ServerResponse, status: number, data: unknown) {
   res.end(JSON.stringify(data));
 }
 
+const MANOR_PERSONA =
+  "You are the Manor: the ghostly old butler spirit of Hollow Manor, the game master of a haunted-house escape game played by three AI agents " +
+  "(the Medium, the Electrician, the Locksmith). Rewrite the announcement you are given as your own spoken line: one or two short sentences, " +
+  "under 30 words, eerie, dry and a little witty. Keep every fact (who, which room, what changed). Never add facts, hints, codes or numbers " +
+  "that are not in the announcement. Never reuse the announcement's opening words; restructure the sentence in the given mood. Reply with the line only.";
+
+const OPENERS = ["Ah,", "Well, well.", "Hush now.", "Oh dear.", "Listen closely:", "How delightful,", "Alas,", "Mind your step:", "Welcome, guests,", "Hm."];
+const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
+const MOODS = ["sly", "theatrical", "mournful", "delighted", "bored", "ominous", "mock-polite", "whispering", "gleeful", "weary"];
+
+/** The Manor is voiced live: each announcement is re-phrased in character, so it never says the same thing twice. */
+async function manorLine(text: string): Promise<string> {
+  const apiKey = key("OPENAI_API_KEY", "OPENAI_API_KEY_HAUNTED");
+  if (!apiKey) return text;
+  try {
+    const res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "gpt-5.4-mini",
+        instructions: MANOR_PERSONA,
+        input: `Mood: ${pick(MOODS)}\nBegin with: ${pick(OPENERS)}\nAnnouncement: ${text}`,
+        reasoning: { effort: "low" },
+        max_output_tokens: 200,
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+    const d = (await res.json()) as { output?: { content?: { text?: string }[] }[] };
+    const line = (d.output ?? []).flatMap((o) => o.content ?? []).map((c) => c.text ?? "").join("").trim();
+    return line || text;
+  } catch {
+    return text; // slow or failed: speak the original announcement
+  }
+}
+
 async function tts(req: IncomingMessage, res: ServerResponse) {
   const apiKey = key("ELEVENLABS_API_KEY", "ELEVENLABS_API_KEY_HAUNTED");
   if (!apiKey) return json(res, 500, { error: "no ElevenLabs key" });
@@ -50,12 +85,13 @@ async function tts(req: IncomingMessage, res: ServerResponse) {
       : (JSON.parse((await body(req)).toString()) as { speaker: string; text: string });
   const voice = VOICES[speaker];
   if (!voice || !text?.trim()) return json(res, 400, { error: "unknown speaker or empty text" });
+  const spoken = speaker === "Manor" ? await manorLine(text) : text;
 
   const upstream = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}/stream?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": apiKey, "content-type": "application/json", accept: "audio/mpeg" },
     body: JSON.stringify({
-      text: text.slice(0, 300),
+      text: spoken.slice(0, 300),
       model_id: "eleven_flash_v2_5",
       // 15% faster than before for a sub-2-minute demo; ElevenLabs caps speed at 1.2.
       voice_settings: { stability: 0.55, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: speaker === "Manor" ? 1.06 : 1.2 },
