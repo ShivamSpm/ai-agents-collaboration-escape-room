@@ -1,5 +1,6 @@
 // Hollow Manor at exactly 1920x1080, scaled to fit smaller windows while developing.
 import { useCallback, useEffect, useState } from "react";
+import { FuseBox } from "./map/FuseBox";
 import { HouseMap } from "./map/HouseMap";
 import { HintCard } from "./overlays/HintCard";
 import { CollapseBanner, CrashOverlay, EndCard } from "./overlays/Overlays";
@@ -51,6 +52,7 @@ export default function App() {
             <ObjectiveBanner world={world} />
             <div className="glass relative min-h-0 flex-1 overflow-hidden p-2">
               <HouseMap world={world} batch={batch} speaking={speaking} />
+              <FuseBox world={world} />
               <CollapseBanner batch={batch} />
               <HintCard world={world} />
               {voicesBlocked && (
