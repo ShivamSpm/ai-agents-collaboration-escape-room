@@ -19,19 +19,27 @@ export function shouldSpeak(e: LogEntry): e is Extract<LogEntry, { kind: "messag
   return e.from === MANOR && e.to === CHANNEL;
 }
 
-/** Only one open tab speaks, or two windows on the same machine play every line twice (an echo). */
+/**
+ * Only one open tab speaks, or two windows on the same machine play every line twice (an echo).
+ * The speaking tab is the one the operator last clicked or typed in.
+ */
 function useVoiceLeader() {
-  const [leader, setLeader] = useState(false);
+  const me = useRef(Math.random().toString(36).slice(2));
+  const [leader, setLeader] = useState(() => document.hasFocus());
   useEffect(() => {
-    if (!navigator.locks) return setLeader(true);
-    const ac = new AbortController();
-    navigator.locks
-      .request("hollow-manor-voices", { signal: ac.signal }, () => {
-        setLeader(true);
-        return new Promise<void>((resolve) => ac.signal.addEventListener("abort", () => resolve()));
-      })
-      .catch(() => {});
-    return () => ac.abort();
+    if (typeof BroadcastChannel === "undefined") return setLeader(true);
+    const ch = new BroadcastChannel("hollow-manor-voices");
+    const claim = () => {
+      setLeader(true);
+      ch.postMessage(me.current);
+    };
+    ch.onmessage = (e) => e.data !== me.current && setLeader(false);
+    if (document.hasFocus()) claim();
+    for (const ev of ["pointerdown", "keydown", "focus"]) window.addEventListener(ev, claim);
+    return () => {
+      for (const ev of ["pointerdown", "keydown", "focus"]) window.removeEventListener(ev, claim);
+      ch.close();
+    };
   }, []);
   return leader;
 }
@@ -42,7 +50,20 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
   const playing = useRef(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
+  /** The browser refused to autoplay; cleared by the next click or key press. */
+  const [blocked, setBlocked] = useState(false);
   const leader = useVoiceLeader();
+
+  useEffect(() => {
+    if (!blocked) return;
+    const unblock = () => setBlocked(false);
+    window.addEventListener("pointerdown", unblock);
+    window.addEventListener("keydown", unblock);
+    return () => {
+      window.removeEventListener("pointerdown", unblock);
+      window.removeEventListener("keydown", unblock);
+    };
+  }, [blocked]);
 
   useEffect(() => {
     if (!enabled || !leader) {
@@ -83,7 +104,10 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
       setSpeaking(line.speaker);
       await new Promise<void>((resolve) => {
         el.onended = el.onerror = el.onpause = () => resolve();
-        el.play().catch(() => resolve());
+        el.play().catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "NotAllowedError") setBlocked(true);
+          resolve();
+        });
       });
     } catch (err) {
       console.warn("voice line skipped", err);
@@ -96,5 +120,5 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
   }, [batch]);
 
   const speakingAgent: AgentId | undefined = speaking ? agentIdFromRelayName(speaking) : undefined;
-  return { speaking, speakingAgent };
+  return { speaking, speakingAgent, blocked: blocked && leader };
 }
