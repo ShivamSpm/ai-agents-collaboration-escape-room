@@ -1,6 +1,8 @@
 // One glass card per agent: role, model chip, current room, last action and its result.
+import { motion } from "motion/react";
 import { AGENT_IDS, AGENTS, ROOMS } from "../../../shared/map";
 import type { Action, AgentId, World } from "../../../shared/types";
+import { runtimeFor } from "../lib/runtime";
 import { portraitFor } from "../map/AgentToken";
 import { GLYPHS } from "../map/Glyphs";
 
@@ -21,15 +23,46 @@ function lastAction(world: World, agent: AgentId) {
   }
 }
 
-export function AgentCards({ world }: { world: World }) {
+/** `speaking` is the Relay name whose voice is playing; that card lights up. */
+export function AgentCards({ world, speaking }: { world: World; speaking: string | null }) {
   return (
     <div className="flex flex-col gap-3">
       {AGENT_IDS.map((id) => {
         const meta = AGENTS[id];
         const last = lastAction(world, id);
+        const talking = speaking === meta.relayName;
         const Glyph = GLYPHS[meta.glyph];
         return (
-          <div key={id} className="glass flex items-center gap-4 px-4 py-3" style={{ borderColor: `${meta.color}40` }}>
+          <motion.div
+            key={id}
+            className="glass relative flex items-center gap-4 px-4 py-3"
+            animate={talking ? { scale: 1.03, x: -6 } : { scale: 1, x: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            style={{
+              borderColor: talking ? meta.color : `${meta.color}40`,
+              borderWidth: talking ? 2 : 1,
+              background: talking ? `linear-gradient(90deg, ${meta.color}33, ${meta.color}0d)` : undefined,
+              boxShadow: talking ? `0 0 28px ${meta.color}66` : undefined,
+            }}
+          >
+            {talking && (
+              <span
+                className="absolute -top-2.5 left-20 flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest text-ink"
+                style={{ background: meta.color }}
+              >
+                <span className="flex h-3 items-end gap-0.5">
+                  {[0, 1, 2].map((i) => (
+                    <motion.span
+                      key={i}
+                      className="w-0.5 rounded-full bg-ink"
+                      animate={{ height: [3, 12, 5, 10, 3] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                    />
+                  ))}
+                </span>
+                Speaking
+              </span>
+            )}
             <div className="relative shrink-0">
               <img
                 src={portraitFor(id)}
@@ -45,7 +78,14 @@ export function AgentCards({ world }: { world: World }) {
               <div className="flex items-center gap-2">
                 <span className="text-[20px] font-semibold" style={{ color: meta.color }}>{meta.relayName}</span>
                 <span className="text-[15px] text-muted">{meta.role}</span>
-                <span className="ml-auto rounded-md border border-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted">{meta.runsOn}</span>
+                <span
+                  className="ml-auto flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-[13px] font-semibold"
+                  style={{ borderColor: `${meta.color}66`, background: `${meta.color}14` }}
+                  title="Which agent CLI and model this agent runs on"
+                >
+                  <span className="uppercase tracking-wider text-bone">{runtimeFor(id).cli}</span>
+                  {runtimeFor(id).model && <span style={{ color: meta.color }}>· {runtimeFor(id).model}</span>}
+                </span>
               </div>
               <div className="mt-1 flex items-center gap-2 font-mono text-[14px]">
                 <span className="rounded bg-white/5 px-1.5 py-0.5 text-bone">{ROOMS[world.agents[id].room].name}</span>
@@ -58,7 +98,7 @@ export function AgentCards({ world }: { world: World }) {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         );
       })}
     </div>
