@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { AGENT_IDS, AGENTS, ROOMS } from "../../../shared/map";
 import type { AgentId, World } from "../../../shared/types";
+import { usePresentation } from "../lib/presentation";
 import { runtimeFor } from "../lib/runtime";
 import { agentNeed, latestHandoff } from "../lib/story";
 import { portraitFor } from "../map/AgentToken";
@@ -27,6 +28,7 @@ function useHandoffGlow(world: World): AgentId | undefined {
 /** `speaking` is the Relay name whose voice is playing; that card lights up. */
 export function AgentCards({ world, speaking }: { world: World; speaking: string | null }) {
   const glow = useHandoffGlow(world);
+  const present = usePresentation();
   return (
     <div className="flex flex-col gap-3">
       {AGENT_IDS.map((id) => {
@@ -84,7 +86,9 @@ export function AgentCards({ world, speaking }: { world: World; speaking: string
               <div className="flex items-center gap-2">
                 <span className="text-[20px] font-semibold" style={{ color: meta.color }}>{meta.relayName}</span>
                 <span className="text-[15px] text-muted">{meta.role}</span>
-                <span className="ml-auto rounded bg-white/5 px-1.5 py-0.5 font-mono text-[12px] text-bone/80">{ROOMS[world.agents[id].room].name}</span>
+                {/* The map already shows where each agent is; presentation mode drops the badge. */}
+                <span className="ml-auto" />
+                {!present && <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[12px] text-bone/80">{ROOMS[world.agents[id].room].name}</span>}
                 <span
                   className="flex items-center gap-1.5 rounded-lg border px-2 py-0.5 font-mono text-[12px] font-semibold"
                   style={{ borderColor: `${meta.color}55`, background: `${meta.color}10` }}
