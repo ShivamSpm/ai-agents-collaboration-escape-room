@@ -38,20 +38,20 @@ export function AgentToken({ world, agent, index, speaking }: { world: World; ag
   return (
     <motion.g style={{ x, y }}>
       <motion.g animate={{ y: [0, -3, 0] }} transition={{ duration: 2.4, repeat: Infinity, delay: index * 0.6, ease: "easeInOut" }}>
-        <circle r={26} fill={meta.color} opacity={0.22} filter="url(#glow)" />
+        <circle r={32} fill={meta.color} opacity={0.24} filter="url(#glow)" />
         {speaking && (
           <motion.circle
             r={22}
             fill="none"
             stroke={meta.color}
             strokeWidth={2}
-            animate={{ r: [20, 34], opacity: [0.9, 0] }}
+            animate={{ r: [24, 40], opacity: [0.9, 0] }}
             transition={{ duration: 0.9, repeat: Infinity, ease: "easeOut" }}
           />
         )}
-        <circle r={17} fill="#0b0d12" stroke={meta.color} strokeWidth={2} />
-        <Glyph size={17} color={meta.color} />
-        <text y={34} textAnchor="middle" fill={meta.color} fontSize={11} fontWeight={600} fontFamily="JetBrains Mono, monospace" letterSpacing="0.08em">
+        <circle r={22} fill="#0b0d12" stroke={meta.color} strokeWidth={3} />
+        <Glyph size={24} color={meta.color} />
+        <text y={42} textAnchor="middle" fill={meta.color} fontSize={14} fontWeight={700} fontFamily="JetBrains Mono, monospace" letterSpacing="0.08em">
           {meta.relayName.toUpperCase()}
         </text>
       </motion.g>

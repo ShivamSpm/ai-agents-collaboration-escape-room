@@ -14,18 +14,24 @@ export function Objectives({ world }: { world: World }) {
   return (
     <div className="flex h-[56px] items-center gap-3 px-2">
       <span className="label mr-1">Objectives</span>
-      {OBJECTIVES.map((o) => {
+      {OBJECTIVES.map((o, i) => {
         const done = o.done(world);
+        // The first unfinished objective is the active one; it stands out from the ones still to come.
+        const active = !done && OBJECTIVES.slice(0, i).every((p) => p.done(world)) && world.status === "running";
         return (
           <motion.span
             key={o.label}
             initial={false}
             animate={{ scale: done ? [1, 1.08, 1] : 1 }}
-            className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[12px] uppercase tracking-wider transition-colors ${
-              done ? "border-teal/60 bg-teal/10 text-teal shadow-[0_0_14px_rgb(0_245_212/0.2)]" : "border-line text-muted"
+            className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[14px] uppercase tracking-wider transition-colors ${
+              done
+                ? "border-teal/60 bg-teal/10 text-teal shadow-[0_0_14px_rgb(0_245_212/0.2)]"
+                : active
+                  ? "border-candle/80 bg-candle/10 text-candle shadow-[0_0_16px_rgb(245_176_65/0.3)]"
+                  : "border-line text-muted/70"
             }`}
           >
-            <span className={`size-1.5 rounded-full ${done ? "bg-teal" : "bg-muted/50"}`} />
+            <span className={`size-1.5 rounded-full ${done ? "bg-teal" : active ? "animate-pulse bg-candle" : "bg-muted/50"}`} />
             {o.label}
           </motion.span>
         );

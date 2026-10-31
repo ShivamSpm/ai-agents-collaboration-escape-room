@@ -4,6 +4,7 @@ import { HouseMap } from "./map/HouseMap";
 import { HintCard } from "./overlays/HintCard";
 import { CollapseBanner, CrashOverlay, EndCard } from "./overlays/Overlays";
 import { AgentCards } from "./panels/AgentCards";
+import { ObjectiveBanner } from "./panels/ObjectiveBanner";
 import { Objectives } from "./panels/Objectives";
 import { OperatorBar } from "./panels/OperatorBar";
 import { RelayFeed } from "./panels/RelayFeed";
@@ -47,6 +48,7 @@ export default function App() {
         <TopBar world={world} connection={connection} />
         <main className="flex min-h-0 flex-1 gap-6 px-8 pt-5">
           <section className="relative flex w-[1240px] shrink-0 flex-col">
+            <ObjectiveBanner world={world} />
             <div className="glass relative min-h-0 flex-1 overflow-hidden p-2">
               <HouseMap world={world} batch={batch} speaking={speaking} />
               <CollapseBanner batch={batch} />
