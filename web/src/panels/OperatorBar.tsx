@@ -232,7 +232,16 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
           ))}
       </select>
       <Btn onClick={onToggleVoices}>{voicesOn ? "🔊 Voices" : "🔇 Muted"}</Btn>
-      <Btn onClick={onToggleMusic}>{musicOn ? "🎃 Music" : "🎃 Off"}</Btn>
+      <button
+        onClick={onToggleMusic}
+        aria-pressed={musicOn}
+        title={musicOn ? "Turn the Halloween music off" : "Turn the Halloween music on"}
+        className={`whitespace-nowrap rounded-xl border-2 px-4 py-2 font-mono text-[13px] font-bold uppercase tracking-wider transition-colors ${
+          musicOn ? "border-candle/70 bg-candle/15 text-candle shadow-[0_0_14px_rgb(245_176_65/0.3)]" : "border-line text-muted hover:text-bone"
+        }`}
+      >
+        {musicOn ? "🎶 Music on" : "🔇 Music off"}
+      </button>
       <button
         onClick={() => {
           clickSound("off");
