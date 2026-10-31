@@ -21,6 +21,12 @@ const relay = new AgentRelay({
   ...(process.env.RELAY_BASE_URL ? { baseUrl: process.env.RELAY_BASE_URL } : {}),
 });
 
+// Relay identities persist across runs; free our names so this run can claim them.
+for (const name of ["Manor", "Operator", "Medium", "Electrician", "Locksmith"]) {
+  const r = Bun.spawnSync(["agent-relay", "agent", "remove", name], { stdout: "pipe", stderr: "pipe" });
+  log(`remove ${name}: ${r.exitCode === 0 ? "ok" : "skipped"}`);
+}
+
 // The orchestrator speaks as "Manor".
 const manor = await relay.workspace.register({ name: "Manor", type: "agent" });
 await manor.channels.create({ name: "manor", topic: "Hollow Manor" }).catch(() => {});
