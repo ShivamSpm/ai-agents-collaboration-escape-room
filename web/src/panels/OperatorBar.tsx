@@ -193,7 +193,17 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
           ))}
       </select>
       <Btn onClick={onToggleVoices}>{voicesOn ? "🔊 Voices" : "🔇 Muted"}</Btn>
-      <Btn onClick={operator.reset}>Reset</Btn>
+      <button
+        onClick={() => {
+          clickSound("off");
+          setPending(false);
+          operator.reset();
+        }}
+        title="Stop the run and go back to the lobby"
+        className="flex items-center gap-2 whitespace-nowrap rounded-xl border-2 border-candle/70 bg-candle/10 px-6 py-2.5 font-mono text-[15px] font-bold uppercase tracking-widest text-candle shadow-[0_0_16px_rgb(245_176_65/0.25)] transition-colors hover:bg-candle/20 active:scale-95"
+      >
+        ↺ Reset
+      </button>
       <Btn onClick={onToggle}>
         <Kbd>H</Kbd>
       </Btn>
