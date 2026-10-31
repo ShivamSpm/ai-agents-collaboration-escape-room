@@ -41,7 +41,7 @@ export default function App() {
   const [talking, setTalking] = useState(false);
   const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn, talking);
   // Low Halloween music: starts on the first click or key press (browser rule), ducks under voices.
-  const [musicOn, setMusicOn] = useState(true);
+  const [musicOn, setMusicOn] = useState(false);
   useEffect(() => {
     if (!musicOn) return setMusic(false);
     const start = () => setMusic(true);
