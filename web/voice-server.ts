@@ -42,7 +42,12 @@ function json(res: ServerResponse, status: number, data: unknown) {
 async function tts(req: IncomingMessage, res: ServerResponse) {
   const apiKey = key("ELEVENLABS_API_KEY", "ELEVENLABS_API_KEY_HAUNTED");
   if (!apiKey) return json(res, 500, { error: "no ElevenLabs key" });
-  const { speaker, text } = JSON.parse((await body(req)).toString()) as { speaker: string; text: string };
+  // GET ?speaker=&text= lets an <audio> element stream it and start playing on the first bytes.
+  const query = new URL(req.url ?? "", "http://localhost").searchParams;
+  const { speaker, text } =
+    req.method === "GET"
+      ? { speaker: query.get("speaker") ?? "", text: query.get("text") ?? "" }
+      : (JSON.parse((await body(req)).toString()) as { speaker: string; text: string });
   const voice = VOICES[speaker];
   if (!voice || !text?.trim()) return json(res, 400, { error: "unknown speaker or empty text" });
 
@@ -91,7 +96,8 @@ export function voiceServer(): Plugin {
     name: "hollow-manor-voice",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (req.method !== "POST" || !req.url?.startsWith("/voice/")) return next();
+        if (!req.url?.startsWith("/voice/")) return next();
+        if (req.method !== "POST" && !(req.method === "GET" && req.url.startsWith("/voice/tts"))) return next();
         try {
           if (req.url.startsWith("/voice/tts")) return await tts(req, res);
           if (req.url.startsWith("/voice/stt")) return await stt(req, res);
