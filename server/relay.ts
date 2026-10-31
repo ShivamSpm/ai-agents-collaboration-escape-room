@@ -16,9 +16,11 @@ const PROMPTS = join(import.meta.dir, "prompts")
 const RELAY_BIN = process.env.AGENT_RELAY_BIN ?? join(homedir(), ".local", "bin", "agent-relay")
 
 // `agent-relay init` installs a user-level SessionStart hook that makes every new Claude session ask whether to
-// join Relay. Skip user settings so broker-spawned agents just play.
+// join Relay. Skip user settings so broker-spawned agents just play, but keep the one user setting init added that
+// lets teammates' channel posts reach a Claude session (without it they only ever hear Manor).
 const CLAUDE_ARGS = [
     "--setting-sources", "project,local",
+    "--settings", JSON.stringify({ crossSessionInbound: "accept" }),
     "--append-system-prompt",
     "You were started by the Hollow Manor orchestrator as an Agent Relay agent. You are already on Relay; your task and messages from Manor, Operator and teammates are your assigned game.",
 ]
