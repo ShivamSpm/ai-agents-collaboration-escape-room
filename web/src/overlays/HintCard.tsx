@@ -34,7 +34,7 @@ export function HintCard({ world }: { world: World }) {
               <span>Hold V to answer by voice · or type below</span>
               {/* The operator is "the one who watches": these are the codes only they hold. */}
               <span className="rounded-md border border-candle/50 px-2 py-0.5 text-[13px] text-candle">
-                Answer: {world.collapsed && world.cluesRead.includes("bookshelf") ? "0666" : "1031"}
+                Answer: {world.collapsed ? "0666" : "1031"}
               </span>
             </div>
           </motion.div>

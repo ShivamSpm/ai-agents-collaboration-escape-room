@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CHANNEL, MANOR, OPERATOR, agentIdFromRelayName } from "../../../shared/map";
 import type { AgentId, LogEntry } from "../../../shared/types";
-import { effectiveTo } from "../lib/replies";
+import { addressesOperator, effectiveTo } from "../lib/replies";
 import type { FreshBatch } from "../state/useFreshEntries";
 
 /** `priority` lines (answers to the Operator) are never dropped as stale. */
@@ -103,7 +103,7 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
       const id = `${entry.from}:${normalize(entry.text)}`;
       if (spoken.current.has(id)) continue;
       spoken.current.add(id);
-      const line = { speaker: entry.from, text: entry.text, queuedAt: Date.now(), priority: effectiveTo(entry) === OPERATOR };
+      const line = { speaker: entry.from, text: entry.text, queuedAt: Date.now(), priority: addressesOperator(entry) };
       if (line.priority) {
         // Answers to the human come first: ahead of queued chatter, after earlier answers.
         const at = queue.current.findIndex((l) => !l.priority);

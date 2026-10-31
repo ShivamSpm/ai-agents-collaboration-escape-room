@@ -117,7 +117,6 @@ async function stt(req: IncomingMessage, res: ServerResponse) {
   const ext = type.includes("mp4") ? "mp4" : type.includes("mpeg") ? "mp3" : type.includes("ogg") ? "ogg" : type.includes("wav") ? "wav" : "webm";
   form.append("file", new Blob([new Uint8Array(audio)], { type }), `speech.${ext}`);
   form.append("model", "gpt-4o-transcribe");
-  form.append("prompt", "Hollow Manor escape room. Names: Medium, Electrician, Locksmith, Manor. Rooms: foyer, library, basement, conservatory, crypt, east corridor, secret passage. Circuits A, B, C.");
   const upstream = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: { authorization: `Bearer ${apiKey}` },
@@ -125,7 +124,10 @@ async function stt(req: IncomingMessage, res: ServerResponse) {
   });
   const data = (await upstream.json()) as { text?: string; error?: unknown };
   if (!upstream.ok) return json(res, 502, { error: data.error ?? upstream.status });
-  json(res, 200, { text: (data.text ?? "").trim() });
+  // Silence or noise comes back as junk ("###", "...", a lone word); send nothing rather than a bogus order.
+  const text = (data.text ?? "").trim();
+  const words = text.replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  json(res, 200, { text: words.length < 2 ? "" : text });
 }
 
 export function voiceServer(): Plugin {
