@@ -62,7 +62,8 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
 
   // Auto-collapse keeps a live run near two minutes: the corridor caves in just after the Medium reaches the
   // Library (mid-plan, before the gate opens), or 35s after the first agent action if that never happens.
-  const [autoCollapse, setAutoCollapse] = useState(true);
+  // Off by default: the operator presses C on camera; the "Auto" button turns it on.
+  const [autoCollapse, setAutoCollapse] = useState(false);
   const collapsedRun = useRef<string | null>(null);
   const firstAgentAt = world.log.find((e) => e.kind === "action")?.t;
   useEffect(() => {
