@@ -1,6 +1,7 @@
 // One glass card per agent: role, model chip, current room, last action and its result.
 import { AGENT_IDS, AGENTS, ROOMS } from "../../../shared/map";
 import type { Action, AgentId, World } from "../../../shared/types";
+import { portraitFor } from "../map/AgentToken";
 import { GLYPHS } from "../map/Glyphs";
 
 function describe(a: Action) {
@@ -29,11 +30,17 @@ export function AgentCards({ world }: { world: World }) {
         const Glyph = GLYPHS[meta.glyph];
         return (
           <div key={id} className="glass flex items-center gap-4 px-4 py-3" style={{ borderColor: `${meta.color}40` }}>
-            <svg viewBox="-24 -24 48 48" className="size-11 shrink-0">
-              <circle r={22} fill={meta.color} opacity={0.15} />
-              <circle r={16} fill="#0b0d12" stroke={meta.color} strokeWidth={2} />
-              <Glyph size={16} color={meta.color} />
-            </svg>
+            <div className="relative shrink-0">
+              <img
+                src={portraitFor(id)}
+                alt={meta.relayName}
+                className="size-16 rounded-full border-[3px] object-cover object-top"
+                style={{ borderColor: meta.color, boxShadow: `0 0 18px ${meta.color}66` }}
+              />
+              <svg viewBox="-12 -12 24 24" className="absolute -bottom-1 -right-1 size-6 rounded-full bg-ink">
+                <Glyph size={14} color={meta.color} />
+              </svg>
+            </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-[20px] font-semibold" style={{ color: meta.color }}>{meta.relayName}</span>
