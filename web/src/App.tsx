@@ -60,6 +60,7 @@ export default function App() {
           </aside>
         </main>
         <OperatorBar
+          world={world}
           operator={operator}
           visible={barVisible}
           onToggle={toggleBar}

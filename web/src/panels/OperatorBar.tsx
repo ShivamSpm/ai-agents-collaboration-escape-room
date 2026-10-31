@@ -1,11 +1,22 @@
 // Operator controls. Hotkeys: S start, C collapse, W type a whisper, hold V to talk, H hide/show this bar.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AGENT_IDS, AGENTS } from "../../../shared/map";
-import type { AgentId } from "../../../shared/types";
+import { AGENT_IDS, AGENTS, agentIdFromRelayName } from "../../../shared/map";
+import type { AgentId, World } from "../../../shared/types";
+import { clickSound } from "../lib/clickSound";
 import type { Operator } from "../state/useWorld";
-import { useMicDevices, usePushToTalk } from "../voice/usePushToTalk";
+import { preferredMic, useMicDevices, usePushToTalk } from "../voice/usePushToTalk";
+
+type RunState = "off" | "starting" | "waking" | "on";
+
+/** Off until started; "waking" while live agents boot (no agent has spoken yet); then on. */
+function runState(world: World, pending: boolean): RunState {
+  if (world.status !== "running") return pending ? "starting" : "off";
+  const agentSpoke = world.log.some((e) => e.kind === "message" && agentIdFromRelayName(e.from));
+  return agentSpoke ? "on" : "waking";
+}
 
 type Props = {
+  world: World;
   operator: Operator;
   visible: boolean;
   onToggle(): void;
@@ -15,14 +26,37 @@ type Props = {
   onToggleVoices(): void;
 };
 
-export function OperatorBar({ operator, visible, onToggle, hintAgent, voicesOn, onToggleVoices }: Props) {
+export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voicesOn, onToggleVoices }: Props) {
   const [picked, setPicked] = useState<AgentId>("locksmith");
   const [text, setText] = useState("");
   const [mic, setMic] = useState("");
+  const [micChosen, setMicChosen] = useState(false);
+  const [pending, setPending] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const target = hintAgent ?? picked;
+  const state = runState(world, pending);
 
   const { devices, refresh } = useMicDevices();
+  // Auto-pick a USB/external mic until the operator chooses one by hand.
+  useEffect(() => {
+    if (!micChosen) setMic(preferredMic(devices));
+  }, [devices, micChosen]);
+
+  useEffect(() => {
+    if (world.status === "running" || !pending) return;
+    const t = setTimeout(() => setPending(false), 15_000);
+    return () => clearTimeout(t);
+  }, [world.status, pending]);
+  useEffect(() => {
+    if (world.status === "running") setPending(false);
+  }, [world.status]);
+
+  const start = useCallback(() => {
+    if (state !== "off") return clickSound("off");
+    clickSound("on");
+    setPending(true);
+    operator.start();
+  }, [state, operator]);
   const onText = useCallback((t: string) => operator.whisper(target, t), [operator, target]);
   const talk = usePushToTalk(mic, onText, refresh);
 
@@ -34,7 +68,7 @@ export function OperatorBar({ operator, visible, onToggle, hintAgent, voicesOn, 
       if (k === "v") {
         e.preventDefault();
         if (!e.repeat) void talk.start();
-      } else if (k === "s") operator.start();
+      } else if (k === "s") start();
       else if (k === "c") operator.collapse();
       else if (k === "h") onToggle();
       else if (k === "w") {
@@ -52,7 +86,7 @@ export function OperatorBar({ operator, visible, onToggle, hintAgent, voicesOn, 
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
     };
-  }, [operator, visible, onToggle, talk]);
+  }, [operator, visible, onToggle, talk, start]);
 
   const whisper = () => {
     if (!text.trim()) return;
@@ -68,9 +102,7 @@ export function OperatorBar({ operator, visible, onToggle, hintAgent, voicesOn, 
   return (
     <footer className="flex h-[64px] items-center gap-3 border-t border-line px-8">
       <span className="label mr-1">Operator</span>
-      <button onClick={operator.start} className="rounded-xl bg-gradient-to-r from-teal to-magenta px-5 py-2 font-mono text-sm font-bold uppercase tracking-widest text-ink shadow-[0_0_20px_rgb(0_245_212/0.3)] hover:brightness-110">
-        Start <Kbd>S</Kbd>
-      </button>
+      <StartButton state={state} onClick={start} />
       <Btn onClick={operator.scripted}>Scripted</Btn>
       <Btn onClick={operator.collapse} danger>
         Collapse <Kbd>C</Kbd>
@@ -118,7 +150,10 @@ export function OperatorBar({ operator, visible, onToggle, hintAgent, voicesOn, 
 
       <select
         value={mic}
-        onChange={(e) => setMic(e.target.value)}
+        onChange={(e) => {
+          setMic(e.target.value);
+          setMicChosen(true);
+        }}
         title="Microphone"
         className="w-36 truncate rounded-xl border border-line bg-transparent px-2 py-2 font-mono text-[11px] text-muted outline-none"
       >
@@ -137,6 +172,30 @@ export function OperatorBar({ operator, visible, onToggle, hintAgent, voicesOn, 
         <Kbd>H</Kbd>
       </Btn>
     </footer>
+  );
+}
+
+const START_LOOK: Record<RunState, { label: string; dot: string; cls: string }> = {
+  off: { label: "Start", dot: "bg-ink/60", cls: "bg-gradient-to-r from-teal to-magenta text-ink shadow-[0_0_20px_rgb(0_245_212/0.3)] hover:brightness-110 active:scale-95" },
+  starting: { label: "Starting…", dot: "bg-candle animate-pulse", cls: "border border-candle/60 text-candle" },
+  waking: { label: "Waking agents…", dot: "bg-candle animate-pulse", cls: "border border-candle/60 text-candle" },
+  on: { label: "Live", dot: "bg-teal animate-pulse shadow-[0_0_10px_#00f5d4]", cls: "border border-teal/70 bg-teal/10 text-teal" },
+};
+
+/** Start shows whether the run is off, starting, waking its agents, or live. */
+function StartButton({ state, onClick }: { state: RunState; onClick(): void }) {
+  const look = START_LOOK[state];
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={state !== "off"}
+      title={state === "off" ? "Start a live run (S)" : "Run is on. Reset to stop it."}
+      className={`flex items-center gap-2.5 rounded-xl px-5 py-2 font-mono text-sm font-bold uppercase tracking-widest transition-all ${look.cls}`}
+    >
+      <span className={`size-2.5 rounded-full ${look.dot}`} />
+      {look.label}
+      <span className={`rounded px-1.5 text-[10px] ${state === "off" ? "bg-ink/20" : "bg-current/15"}`}>{state === "off" ? "OFF" : "ON"}</span>
+    </button>
   );
 }
 
