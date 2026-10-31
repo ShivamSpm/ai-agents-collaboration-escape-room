@@ -65,32 +65,45 @@ export function HouseMap({ world, batch, speaking }: { world: World; batch: Fres
   );
 }
 
+/** The Manor's ghostly butler: the game master who answers every action. Floats, flickers and swells when it speaks. */
 function ManorSigil({ speaking }: { speaking: boolean }) {
   const { x, y } = MANOR_SIGIL;
+  const R = 46;
   return (
-    <g>
+    <motion.g
+      style={{ x, y }}
+      animate={{ y: [y, y - 6, y], scale: speaking ? [1, 1.1, 1] : 1 }}
+      transition={{ y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" }, scale: { duration: 0.6, repeat: speaking ? Infinity : 0 } }}
+    >
       <motion.circle
-        cx={x}
-        cy={y}
-        r={40}
+        r={R + 16}
         fill="#ef4444"
         filter="url(#glow)"
-        animate={{ opacity: speaking ? [0.35, 0.8, 0.35] : [0.15, 0.35, 0.15] }}
+        animate={{ opacity: speaking ? [0.35, 0.8, 0.35] : [0.12, 0.3, 0.12] }}
         transition={{ duration: speaking ? 0.6 : 3, repeat: Infinity }}
       />
-      <circle cx={x} cy={y} r={30} fill="#0b0d12" stroke="#ef4444" strokeWidth={2} />
-      <path
-        d={Array.from({ length: 5 }, (_, i) => {
-          const a = (-90 + i * 144) * (Math.PI / 180);
-          return `${i ? "L" : "M"}${x + 22 * Math.cos(a)} ${y + 22 * Math.sin(a)}`;
-        }).join(" ") + "Z"}
-        fill="none"
-        stroke="#ef4444"
-        strokeWidth={1.5}
+      <defs>
+        <clipPath id="clip-manor">
+          <circle r={R} />
+        </clipPath>
+      </defs>
+      <circle r={R + 2} fill="#0b0d12" />
+      <motion.image
+        href="/characters/manor.png"
+        x={-R}
+        y={-R}
+        width={R * 2}
+        height={R * 2}
+        clipPath="url(#clip-manor)"
+        preserveAspectRatio="xMidYMin slice"
+        animate={{ opacity: [0.85, 1, 0.9, 1, 0.85] }}
+        transition={{ duration: 4, repeat: Infinity }}
       />
-      <text x={x} y={y + 52} textAnchor="middle" fill="#ef4444" fontFamily="JetBrains Mono, monospace" fontSize={11} letterSpacing="0.2em">
+      <circle r={R} fill="none" stroke="#ef4444" strokeWidth={3} />
+      <rect x={-54} y={R + 8} width={108} height={20} rx={10} fill="#0b0d12" opacity={0.85} stroke="#ef4444" strokeOpacity={0.6} />
+      <text y={R + 22} textAnchor="middle" fill="#ef4444" fontFamily="JetBrains Mono, monospace" fontSize={12} fontWeight={700} letterSpacing="0.2em">
         THE MANOR
       </text>
-    </g>
+    </motion.g>
   );
 }

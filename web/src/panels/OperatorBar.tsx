@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AGENT_IDS, AGENTS, agentIdFromRelayName } from "../../../shared/map";
 import type { AgentId, World } from "../../../shared/types";
 import { clickSound } from "../lib/clickSound";
+import { portraitFor } from "../map/AgentToken";
 import type { Operator } from "../state/useWorld";
 import { SoundWave } from "../voice/SoundWave";
 import { preferredMic, useMicDevices, usePushToTalk } from "../voice/usePushToTalk";
@@ -34,7 +35,10 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
   const [micChosen, setMicChosen] = useState(false);
   const [pending, setPending] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  const target = hintAgent ?? picked;
+  // A pending hint question selects its asker until the operator clicks someone else.
+  const [override, setOverride] = useState(false);
+  useEffect(() => setOverride(false), [hintAgent]);
+  const target = hintAgent && !override ? hintAgent : picked;
   const state = runState(world, pending);
 
   const { devices, refresh } = useMicDevices();
@@ -128,19 +132,34 @@ export function OperatorBar({ world, operator, visible, onToggle, hintAgent, voi
           🎙 {talkLabel}
         </button>
         <span className="font-mono text-xs text-muted">to</span>
-        <select
-          value={target}
-          onChange={(e) => setPicked(e.target.value as AgentId)}
-          disabled={!!hintAgent}
-          className="rounded-lg bg-transparent px-1 py-1 font-mono text-sm outline-none"
-          style={{ color }}
-        >
-          {AGENT_IDS.map((id) => (
-            <option key={id} value={id} className="bg-ink">
-              {AGENTS[id].relayName}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Talk to">
+          {AGENT_IDS.map((id) => {
+            const on = id === target;
+            const c = AGENTS[id].color;
+            return (
+              <button
+                key={id}
+                role="radio"
+                aria-checked={on}
+                title={`Talk to the ${AGENTS[id].relayName}`}
+                onClick={() => {
+                  clickSound("on");
+                  setPicked(id);
+                  setOverride(true);
+                }}
+                className={`relative rounded-full transition-all ${on ? "scale-110" : "opacity-45 grayscale hover:opacity-80 hover:grayscale-0"}`}
+              >
+                <img
+                  src={portraitFor(id)}
+                  alt={AGENTS[id].relayName}
+                  className="size-10 rounded-full border-2 object-cover object-top"
+                  style={{ borderColor: c, boxShadow: on ? `0 0 14px ${c}` : "none" }}
+                />
+                {on && <span className="absolute -bottom-1 left-1/2 size-1.5 -translate-x-1/2 rounded-full" style={{ background: c }} />}
+              </button>
+            );
+          })}
+        </div>
         <input
           ref={input}
           value={text}

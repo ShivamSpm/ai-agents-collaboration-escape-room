@@ -1,8 +1,9 @@
 // Every Relay message and operator event, in order, newest at the bottom.
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
-import { MANOR, OPERATOR } from "../../../shared/map";
+import { agentIdFromRelayName, MANOR, OPERATOR } from "../../../shared/map";
 import type { World } from "../../../shared/types";
+import { portraitFor } from "../map/AgentToken";
 import { colorFor } from "../map/Messages";
 import { effectiveTo, isJsonBounce } from "../lib/replies";
 
@@ -46,7 +47,9 @@ export function RelayFeed({ world }: { world: World }) {
                 ✦ {entry.text}
               </motion.div>
             ) : entry.kind === "message" ? (
-              <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-[18px] leading-snug">
+              <motion.div key={key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 text-[18px] leading-snug">
+                <Avatar name={entry.from} />
+                <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 font-mono text-[13px] font-semibold">
                   {entry.private && <span title="private">🔒</span>}
                   <span style={{ color: colorFor(entry.from) }}>{entry.from}</span>
@@ -60,11 +63,33 @@ export function RelayFeed({ world }: { world: World }) {
                 >
                   {entry.text}
                 </div>
+                </div>
               </motion.div>
             ) : null,
           )}
         </AnimatePresence>
       </div>
+    </div>
+  );
+}
+
+/** Who is talking: the agent's portrait, the Manor's sigil, or the Operator's mic. */
+function Avatar({ name }: { name: string }) {
+  const agent = agentIdFromRelayName(name);
+  const color = colorFor(name);
+  const ring = { borderColor: color, boxShadow: `0 0 10px ${color}55` };
+  if (agent || name === MANOR)
+    return (
+      <img
+        src={agent ? portraitFor(agent) : "/characters/manor.png"}
+        alt={name}
+        className="size-11 shrink-0 rounded-full border-2 object-cover object-top"
+        style={ring}
+      />
+    );
+  return (
+    <div className="grid size-11 shrink-0 place-items-center rounded-full border-2 bg-ink text-xl" style={ring}>
+      {name === OPERATOR ? "🎙" : "•"}
     </div>
   );
 }
