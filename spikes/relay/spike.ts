@@ -16,6 +16,12 @@ const t0 = Date.now();
 const ts = () => `+${((Date.now() - t0) / 1000).toFixed(1)}s`;
 const log = (...a: unknown[]) => console.log(ts(), ...a);
 
+// Set before any await, so a hung spawn still ends the run.
+setTimeout(() => {
+  console.log("\n==== GATE R TIMEOUT (180s) ====", JSON.stringify(results));
+  process.exit(1);
+}, 180_000);
+
 const relay = new AgentRelay({
   workspaceKey: KEY,
   ...(process.env.RELAY_BASE_URL ? { baseUrl: process.env.RELAY_BASE_URL } : {}),
@@ -80,7 +86,14 @@ const cwd = (name: string) => {
 log("spawning Medium (Claude Code) and Electrician (Codex)...");
 // Sequential on purpose: the first create() starts the broker, later ones attach to it.
 // In parallel, both try to start a broker under the same name and one gets a 409.
-const medium = await claude.create({ relay, name: "Medium", model: "haiku", channels: ["manor"], cwd: cwd("Medium"), task: task("Medium") });
+// `agent-relay init` installs a user-level SessionStart hook that makes every new Claude session ask
+// whether to join Relay; skip user settings so broker-spawned agents just play.
+const CLAUDE_ARGS = [
+  "--setting-sources", "project,local",
+  "--append-system-prompt",
+  "You were started by the Hollow Manor orchestrator as an Agent Relay agent. You are already on Relay; your task and messages from Manor and teammates are your assigned game.",
+];
+const medium = await claude.create({ relay, name: "Medium", model: "haiku", channels: ["manor"], cwd: cwd("Medium"), task: task("Medium"), args: CLAUDE_ARGS });
 log("Medium spawned");
 const electrician = await codex.create({ relay, name: "Electrician", channels: ["manor"], cwd: cwd("Electrician"), task: task("Electrician") });
 log("spawned:", medium.name, electrician.name);
@@ -94,9 +107,6 @@ function report() {
     console.log(`${n}: posted=${r.posted} dmed=${r.dmed} reaction=${(r.reactionMs! / 1000).toFixed(1)}s ${r.reactionMs! < 15000 ? "PASS" : "SLOW"}`);
   }
   console.log(`total ${ts()}`);
+  process.exit(0);
 }
 
-setTimeout(() => {
-  console.log("\n==== GATE R TIMEOUT (180s) ====", JSON.stringify(results));
-  process.exit(1);
-}, 180_000);
