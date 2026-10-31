@@ -97,6 +97,14 @@ export function EndCard({ world, onReplay }: { world: World; onReplay(): void })
     return () => clearTimeout(t);
   }, [world.status]);
 
+  // Esc closes the card to show the finished map; it comes back on the next escape.
+  useEffect(() => {
+    if (!show) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setShow(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [show]);
+
   const time = world.startedAt && world.endedAt ? formatDuration(world.endedAt - world.startedAt) : "--:--";
   const stats = [
     ["Time", time],
@@ -115,6 +123,14 @@ export function EndCard({ world, onReplay }: { world: World; onReplay(): void })
           transition={{ duration: 1.2 }}
           className="absolute inset-0 z-30 grid place-items-center bg-ink/92"
         >
+          <button
+            onClick={() => setShow(false)}
+            title="Close (Esc)"
+            aria-label="Close"
+            className="absolute right-10 top-24 grid size-14 place-items-center rounded-full border border-line bg-panel/80 text-3xl leading-none text-bone/80 hover:border-candle/70 hover:text-candle"
+          >
+            ✕
+          </button>
           <motion.div initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ delay: 0.4, type: "spring" }} className="text-center">
             <div className="font-spooky text-[140px] leading-none text-candle drop-shadow-[0_0_40px_rgb(245_176_65/0.5)]">Escaped</div>
             <div className="mt-10 flex justify-center gap-6">
