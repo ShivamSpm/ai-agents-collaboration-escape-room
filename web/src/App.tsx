@@ -1,7 +1,9 @@
 // Hollow Manor at exactly 1920x1080, scaled to fit smaller windows while developing.
 import { useCallback, useEffect, useState } from "react";
 import { HouseMap } from "./map/HouseMap";
+import { duckMusic, setMusic } from "./lib/spooky";
 import { HintCard } from "./overlays/HintCard";
+import { ObjectiveFlash } from "./overlays/ObjectiveFlash";
 import { CollapseBanner, CrashOverlay, EndCard } from "./overlays/Overlays";
 import { AgentCards } from "./panels/AgentCards";
 import { ObjectiveBanner } from "./panels/ObjectiveBanner";
@@ -52,6 +54,20 @@ export default function App() {
   const [voicesOn, setVoicesOn] = useState(true);
   const [talking, setTalking] = useState(false);
   const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn, talking);
+  // Low Halloween music: starts on the first click or key press (browser rule), ducks under voices.
+  const [musicOn, setMusicOn] = useState(true);
+  useEffect(() => {
+    if (!musicOn) return setMusic(false);
+    const start = () => setMusic(true);
+    start();
+    window.addEventListener("pointerdown", start, { once: true });
+    window.addEventListener("keydown", start, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", start);
+      window.removeEventListener("keydown", start);
+    };
+  }, [musicOn]);
+  useEffect(() => duckMusic(!!speaking || talking), [speaking, talking]);
   const hintAgent = hintState(world).pending?.agent;
   const scale = useStageScale();
 
@@ -91,9 +107,12 @@ export default function App() {
           hintAgent={hintAgent}
           voicesOn={voicesOn}
           onToggleVoices={() => setVoicesOn((v) => !v)}
+          musicOn={musicOn}
+          onToggleMusic={() => setMusicOn((v) => !v)}
           onTalking={setTalking}
         />
         <CrashOverlay connection={connection} world={world} batch={batch} />
+        <ObjectiveFlash world={world} />
         <EndCard world={world} onReplay={operator.replay} />
       </div>
     </div>
