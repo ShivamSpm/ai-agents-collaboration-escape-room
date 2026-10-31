@@ -14,6 +14,8 @@ export type Operator = {
   collapse(): void;
   whisper(agent: AgentId, text: string): void;
   reset(): void;
+  /** Reset, wait for the orchestrator to come back, then start a fresh live run. */
+  replay(): void;
 };
 
 /** `?mode=live` or VITE_WORLD_MODE=live switches to the real actor. Default is fake until the actor ships. */
@@ -33,6 +35,21 @@ async function post(path: string, body?: unknown) {
     if (!res.ok) console.warn(`${path} -> ${res.status}`);
   } catch (err) {
     console.warn(`${path} failed`, err);
+  }
+}
+
+/** After a live run, Reset restarts the orchestrator (run.sh); wait until it answers again. */
+async function waitForServer(timeoutMs = 20_000) {
+  const until = Date.now() + timeoutMs;
+  await new Promise((r) => setTimeout(r, 1500));
+  while (Date.now() < until) {
+    try {
+      const res = await fetch("/api/health", { method: "POST" });
+      if (res.ok) return;
+    } catch {
+      // still restarting
+    }
+    await new Promise((r) => setTimeout(r, 700));
   }
 }
 
@@ -94,6 +111,10 @@ export function useWorld(mode: Mode) {
             collapse: () => fake.current?.collapse(),
             whisper: (agent, text) => fake.current?.whisper(agent, text),
             reset: () => fake.current?.reset(),
+            replay: () => {
+              fake.current?.reset();
+              setTimeout(() => fake.current?.start(), 300);
+            },
           }
         : {
             start: () => post("/api/run/start"),
@@ -101,6 +122,11 @@ export function useWorld(mode: Mode) {
             collapse: () => post("/api/run/collapse"),
             whisper: (agent, text) => post("/api/run/whisper", { agent, text }),
             reset: () => post("/api/run/reset"),
+            replay: async () => {
+              await post("/api/run/reset");
+              await waitForServer();
+              await post("/api/run/start");
+            },
           },
     [mode],
   );
