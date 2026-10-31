@@ -77,21 +77,14 @@ export function useVoices(batch: FreshBatch, enabled: boolean) {
 
   async function say(line: Line) {
     try {
-      const res = await fetch("/voice/tts", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ speaker: line.speaker, text: line.text }),
-      });
-      if (!res.ok) throw new Error(`tts ${res.status}`);
-      const url = URL.createObjectURL(await res.blob());
-      const el = new Audio(url);
+      // Streamed: playback starts on the first audio bytes instead of after the whole clip.
+      const el = new Audio(`/voice/tts?${new URLSearchParams({ speaker: line.speaker, text: line.text })}`);
       audio.current = el;
       setSpeaking(line.speaker);
       await new Promise<void>((resolve) => {
         el.onended = el.onerror = el.onpause = () => resolve();
         el.play().catch(() => resolve());
       });
-      URL.revokeObjectURL(url);
     } catch (err) {
       console.warn("voice line skipped", err);
     }
