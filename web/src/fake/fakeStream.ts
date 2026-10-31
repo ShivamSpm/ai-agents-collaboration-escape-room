@@ -83,6 +83,7 @@ const SCRIPT: Step[] = [
   move("locksmith", ["foyer", "east_corridor"]),
   collapse,
   say("Locksmith", "#manor", "Corridor's gone. Pushed back to the foyer. Medium, check that bookshelf?"),
+  say("Locksmith", "Operator", "Operator, the corridor is rubble. Is there another way into the crypt?"),
   inspect("bookshelf", "A red book slides out. A keypad marked 0666. The iron door obeys only the third circuit."),
   say("Medium", "#manor", "Secret door code 0666. Iron door needs circuit C. Read everything, switch now."),
   move("locksmith", ["foyer", "library"]),
@@ -109,7 +110,7 @@ export type FakeStream = {
   stop(): void;
 };
 
-export function createFakeStream(onWorld: (w: World) => void, stepMs = 1400): FakeStream {
+export function createFakeStream(onWorld: (w: World) => void, stepMs = 2400): FakeStream {
   let world = createWorld("fake-run");
   let i = 0;
   let timer: ReturnType<typeof setInterval> | undefined;

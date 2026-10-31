@@ -1,6 +1,7 @@
 // Hollow Manor at exactly 1920x1080, scaled to fit smaller windows while developing.
 import { useCallback, useEffect, useState } from "react";
 import { HouseMap } from "./map/HouseMap";
+import { HintCard } from "./overlays/HintCard";
 import { CollapseBanner, CrashOverlay, EndCard } from "./overlays/Overlays";
 import { AgentCards } from "./panels/AgentCards";
 import { Objectives } from "./panels/Objectives";
@@ -9,6 +10,8 @@ import { RelayFeed } from "./panels/RelayFeed";
 import { TopBar } from "./panels/TopBar";
 import { useFreshEntries } from "./state/useFreshEntries";
 import { readMode, useWorld } from "./state/useWorld";
+import { hintState } from "./voice/hints";
+import { useVoices } from "./voice/useVoices";
 
 const W = 1920;
 const H = 1080;
@@ -30,6 +33,9 @@ export default function App() {
   const batch = useFreshEntries(world);
   const [barVisible, setBarVisible] = useState(true);
   const toggleBar = useCallback(() => setBarVisible((v) => !v), []);
+  const [voicesOn, setVoicesOn] = useState(true);
+  const { speaking } = useVoices(batch, voicesOn);
+  const hintAgent = hintState(world).pending?.agent;
   const scale = useStageScale();
 
   return (
@@ -42,8 +48,9 @@ export default function App() {
         <main className="flex min-h-0 flex-1 gap-6 px-8 pt-5">
           <section className="relative flex w-[1240px] shrink-0 flex-col">
             <div className="glass relative min-h-0 flex-1 overflow-hidden p-2">
-              <HouseMap world={world} batch={batch} />
+              <HouseMap world={world} batch={batch} speaking={speaking} />
               <CollapseBanner batch={batch} />
+              <HintCard world={world} />
             </div>
             <Objectives world={world} />
           </section>
@@ -52,7 +59,14 @@ export default function App() {
             <RelayFeed world={world} />
           </aside>
         </main>
-        <OperatorBar operator={operator} visible={barVisible} onToggle={toggleBar} />
+        <OperatorBar
+          operator={operator}
+          visible={barVisible}
+          onToggle={toggleBar}
+          hintAgent={hintAgent}
+          voicesOn={voicesOn}
+          onToggleVoices={() => setVoicesOn((v) => !v)}
+        />
         <CrashOverlay connection={connection} world={world} batch={batch} />
         <EndCard world={world} />
       </div>

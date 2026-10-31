@@ -1,0 +1,39 @@
+// When an agent asks the Operator for help: who asked, what, and how many hints are left.
+import { AnimatePresence, motion } from "motion/react";
+import { AGENTS } from "../../../shared/map";
+import type { World } from "../../../shared/types";
+import { hintState, MAX_HINTS } from "../voice/hints";
+
+export function HintCard({ world }: { world: World }) {
+  const { left, pending } = hintState(world);
+  const meta = pending ? AGENTS[pending.agent] : undefined;
+  return (
+    <>
+      <div className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-xl border border-line bg-ink/80 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted">
+        Hints
+        {Array.from({ length: MAX_HINTS }, (_, i) => (
+          <span key={i} className={`size-2.5 rounded-full ${i < left ? "bg-candle shadow-[0_0_8px_#f5b041]" : "bg-line"}`} />
+        ))}
+      </div>
+      <AnimatePresence>
+        {pending && meta && (
+          <motion.div
+            key={pending.index}
+            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-5 left-1/2 z-10 w-[640px] -translate-x-1/2 rounded-2xl border bg-ink/90 px-6 py-4 backdrop-blur"
+            style={{ borderColor: meta.color, boxShadow: `0 0 36px ${meta.color}44` }}
+          >
+            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: meta.color }}>
+              <motion.span className="size-2 rounded-full" style={{ background: meta.color }} animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+              {meta.relayName} asks the Operator
+            </div>
+            <div className="mt-1.5 text-[19px] leading-snug text-bone">“{pending.text}”</div>
+            <div className="mt-2 font-mono text-[11px] uppercase tracking-widest text-muted">Hold V to answer by voice · or type below</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
