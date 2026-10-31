@@ -53,7 +53,9 @@ export default function App() {
   }, []);
   const [voicesOn, setVoicesOn] = useState(true);
   const [talking, setTalking] = useState(false);
-  const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn, talking);
+  // Reset (startedAt cleared) and every new run change this key, which flushes the previous game's voices.
+  const runKey = `${world.runId}:${world.startedAt ?? "lobby"}`;
+  const { speaking, blocked: voicesBlocked } = useVoices(batch, voicesOn, talking, runKey);
   // Low Halloween music: starts on the first click or key press (browser rule), ducks under voices.
   const [musicOn, setMusicOn] = useState(false);
   useEffect(() => {
