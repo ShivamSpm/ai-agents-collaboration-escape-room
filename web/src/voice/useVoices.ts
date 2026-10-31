@@ -25,6 +25,27 @@ export function shouldSpeak(e: LogEntry): e is Extract<LogEntry, { kind: "messag
 }
 
 /**
+ * Every voice element this page has started. Playback is exclusive: starting one line pauses all others,
+ * so two voices can never overlap, even if a stale player survived a hot reload or a race.
+ */
+const live = new Set<HTMLAudioElement>();
+
+function playExclusive(el: HTMLAudioElement) {
+  for (const other of live) if (other !== el && !other.paused) other.pause();
+  live.add(el);
+  const forget = () => live.delete(el);
+  el.addEventListener("ended", forget, { once: true });
+  el.addEventListener("error", forget, { once: true });
+  return el.play();
+}
+
+// A hot reload replaces this module; silence everything the old copy started.
+import.meta.hot?.dispose(() => {
+  for (const el of live) el.pause();
+  live.clear();
+});
+
+/**
  * Only one open tab speaks, or two windows on the same machine play every line twice (an echo).
  * The speaking tab is the one the operator last clicked or typed in.
  */
@@ -86,7 +107,7 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
       const now = Date.now();
       for (const l of queue.current) l.queuedAt = now;
       // Don't restart chatter that an answer suspended; it resumes after the answer.
-      if (audio.current && audio.current !== suspended.current?.el) void audio.current.play().catch(() => {});
+      if (audio.current && audio.current !== suspended.current?.el) void playExclusive(audio.current).catch(() => {});
     }
   }, [paused]);
 
@@ -162,7 +183,7 @@ export function useVoices(batch: FreshBatch, enabled: boolean, paused = false) {
         // A pause (operator talking) does not end the line; it resumes where it stopped.
         finish.current = resolve;
         el.onended = el.onerror = () => resolve();
-        el.play().catch((err: unknown) => {
+        playExclusive(el).catch((err: unknown) => {
           if (err instanceof DOMException && err.name === "NotAllowedError") setBlocked(true);
           resolve();
         });
