@@ -75,7 +75,34 @@ Until ~1:00, Person B builds against a hard-coded `World` and a timer-driven fak
 
 - **Gate R (Agent Relay, Person A):** **PASS (12:45, WSL, Agent Relay 15.0.1)**: Medium (Claude Code, haiku) and Electrician (Codex) each posted on `#manor`, DMed `Manor` a JSON action, and reacted to Manor's reply in 3.0s and 3.9s; whole run 20s. CLI agents stay (no lite fallback). Spike: [spikes/relay/spike.ts](spikes/relay/spike.ts). Setup on the Mac, once: install the CLI, then `agent-relay init` (local server on `127.0.0.1:8787`, key in `~/.agentworkforce/relay/workspaces.json`). Gotchas the code already handles: spawn agents one at a time; free agent names at startup; start Claude agents with `--setting-sources project,local` (init's global SessionStart hook otherwise makes them stop and ask whether to join Relay); kill leftover `agent-relay-broker` processes after a run.
 - **Gate D (Durable Actors, Person B):** **PASS (11:40, on the Mac with `terse actor dev`)**: the counter survived Ctrl+C and restart, and the browser reconnected by itself. Backend calls `actors.X.prepareWebsocket({ actorId, metadata })` → `{ websocketUrl }`, and direct method calls (`actors.X.get(id).method()`) also work. Details: [spikes/durable-counter/FINDINGS.md](spikes/durable-counter/FINDINGS.md).
-- **Decisions taken:** _none yet_ (e.g. "AGENT_DRIVER=lite", "ONE_CIRCUIT=false", "dropped crash claim").
+- **Decisions taken:**
+  - **Locksmith runs on Codex, not Claude** (13:20). Relay 15 never wakes an idle broker-spawned Claude agent, so a Claude Locksmith stalled once it had the code. Lineup: Medium = Claude Code (Sonnet), Electrician = Codex, Locksmith = Codex. Still two vendors. Override per agent with `MEDIUM_CLI` / `ELECTRICIAN_CLI` / `LOCKSMITH_CLI` = `claude` | `codex`. **`shared/map.ts` still says `runsOn: "Claude Code"` for the Locksmith, so the UI chip is wrong; needs both of us to agree before changing it.**
+  - Claude agents are told to stay in their turn (sleep 3s + check inbox) while waiting, and Manor forwards teammates' `#manor` posts to them; both are workarounds for the same Relay wake-up gap.
+  - "Resumed" is logged by the orchestrator after a real actor outage, not by the actor (the runtime unloads idle actors, which looked like restarts).
+  - Collapse timing: agents are fast (happy path escapes in ~36s; code found ~28s, gate unlocked ~31s). Press Collapse ~20s in, right after the Medium moves to the Library; the replan still works.
+
+## Live results (WSL, 13:30)
+
+| Run | Result |
+| --- | --- |
+| Scripted replay | escaped, 13 actions, 0 failed |
+| Scripted + actor killed (SIGINT) mid-run and restarted | resumed and escaped; same 13 actions / 24 messages as an uncrashed run, nothing lost or duplicated |
+| Live agents, happy path | **escaped in 36s**, 15 actions, 0 failed |
+| Live agents, collapse at 22s | **escaped in 90s**, 21 actions, 0 failed; bookshelf read at 52s, secret door at 62s, circuit C at 81s (after the bookshelf, as designed) |
+
+## Running the full stack (Mac or WSL)
+
+One-time: Bun, Node 22, Claude Code and Codex logged in, `OPENAI_API_KEY` set, `bunx terse-cli@latest install`, the Agent Relay CLI installer, then `agent-relay init`.
+
+```bash
+cd actors && bun install && terse actor dev                  # terminal 1: Ready http://127.0.0.1:7100 (first build ~70s)
+cd server && bun install && bun run generate && ./run.sh     # terminal 2: orchestrator on :3001 (run.sh restarts it after a reset)
+cd web && bun install && bun run dev                         # terminal 3: open http://localhost:5173/?mode=live
+```
+
+- Start, Scripted, Collapse, Whisper and Reset all work against the real actor. Reset after a live run restarts the orchestrator on purpose (Relay won't re-register Manor in the same process); `run.sh` brings it back in ~2s.
+- **For the UI:** a scripted run logs an extra `start` event with text starting `SCRIPTED REPLAY`; please show a "SCRIPTED REPLAY" badge when you see it. The browser gets `{type:"world", world}` on connect and on every change, as the README expects.
+- Crash demo: Ctrl+C on terminal 1, then rerun `terse actor dev`. Never restart terminal 2 mid-run.
 
 ## If one of us falls behind
 
