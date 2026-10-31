@@ -1,9 +1,9 @@
-// When an objective is accomplished: a huge Creepster label slams in, hangs, then melts away like ectoplasm,
-// with an evil laugh. Credits the agent whose action just completed it.
+// Every accomplishment flashes a short Creepster label that slams in, hangs, then melts away like ectoplasm,
+// with an evil laugh: each clue read, power switch or door opened (credited to that agent), plus escaping.
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { AGENTS, agentIdFromRelayName } from "../../../shared/map";
-import type { AgentId, World } from "../../../shared/types";
+import type { Action, AgentId, World } from "../../../shared/types";
 import { evilLaugh } from "../lib/spooky";
 import { portraitFor } from "../map/AgentToken";
 import { OBJECTIVES } from "../panels/Objectives";
@@ -12,6 +12,20 @@ type Flash = { id: number; label: string; agent?: AgentId };
 
 /** Short and sweet: the label holds briefly, then melts. */
 const HOLD_MS = 1600;
+
+/** Short spooky label for an agent's successful action, or undefined for plain moves and looks. */
+function accomplishment(a: Action): string | undefined {
+  switch (a.action) {
+    case "inspect":
+      return { portrait: "Clue found", ledger: "Ledger read", bookshelf: "Secret found" }[a.object];
+    case "power":
+      return a.circuit === "B" ? "Lights on" : "Power shifted";
+    case "unlock":
+      return a.door === "crypt_gate" ? "Gate open" : "Door open";
+    default:
+      return undefined;
+  }
+}
 
 /** The agent behind the newest successful action or message, for the credit line. */
 function lastActor(world: World): AgentId | undefined {
@@ -26,20 +40,31 @@ function lastActor(world: World): AgentId | undefined {
 }
 
 export function ObjectiveFlash({ world }: { world: World }) {
-  const seen = useRef<{ runId: string; done: boolean[] } | null>(null);
+  const seen = useRef<{ runId: string; done: boolean[]; logLen: number } | null>(null);
   const [queue, setQueue] = useState<Flash[]>([]);
   const nextId = useRef(0);
 
   useEffect(() => {
     const done = OBJECTIVES.map((o) => o.done(world));
     const prev = seen.current;
-    seen.current = { runId: world.runId, done };
+    seen.current = { runId: world.runId, done, logLen: world.log.length };
     // First world seen, a new run, or a reset: baseline only, nothing to celebrate.
-    if (!prev || prev.runId !== world.runId || world.status === "lobby") return;
+    if (!prev || prev.runId !== world.runId || world.status === "lobby" || world.log.length < prev.logLen) return;
+
+    // Each agent's own accomplishments since the last update, credited to them.
+    const flashes: Flash[] = [];
+    for (const e of world.log.slice(prev.logLen)) {
+      if (e.kind !== "action" || !e.ok) continue;
+      const label = accomplishment(e.action);
+      if (label) flashes.push({ id: nextId.current++, label, agent: e.agent });
+    }
+    // Objectives that no action covered (e.g. a code shared in chat, or the escape itself).
     const fresh = OBJECTIVES.filter((_, i) => done[i] && !prev.done[i]);
-    if (!fresh.length) return;
-    const agent = lastActor(world);
-    setQueue((q) => [...q, ...fresh.map((o) => ({ id: nextId.current++, label: o.label, agent }))]);
+    for (const o of fresh) {
+      if (flashes.length && o.label !== "Escaped") continue;
+      flashes.push({ id: nextId.current++, label: o.label, agent: lastActor(world) });
+    }
+    if (flashes.length) setQueue((q) => [...q, ...flashes]);
   }, [world]);
 
   const flash = queue[0];
