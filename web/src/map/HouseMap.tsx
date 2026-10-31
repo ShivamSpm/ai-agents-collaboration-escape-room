@@ -3,6 +3,7 @@ import { motion, useAnimationControls } from "motion/react";
 import { useEffect } from "react";
 import { AGENT_IDS, AGENTS, MANOR } from "../../../shared/map";
 import type { World } from "../../../shared/types";
+import { collapseSound } from "../lib/clickSound";
 import { MANOR_SIGIL, MAP_H, MAP_W } from "../lib/geometry";
 import type { FreshBatch } from "../state/useFreshEntries";
 import { AgentToken } from "./AgentToken";
@@ -19,7 +20,8 @@ export function HouseMap({ world, batch, speaking }: { world: World; batch: Fres
 
   useEffect(() => {
     if (batch.items.some(({ entry }) => entry.kind === "event" && entry.event === "collapse")) {
-      shake.start({ x: [0, -10, 9, -7, 6, -3, 0], y: [0, 5, -6, 4, -3, 2, 0], transition: { duration: 0.3 } });
+      collapseSound();
+      shake.start({ x: [0, -14, 12, -10, 8, -5, 3, 0], y: [0, 7, -8, 5, -4, 2, 0], transition: { duration: 0.6 } });
     }
   }, [batch, shake]);
 
