@@ -6,10 +6,11 @@ Each agent holds knowledge and an ability the others lack, so they have to coord
 
 Built in 5 hours at **Haunted Hacks: Realtime AI Edition** (Oct 31, 2026) by a team of two.
 
-Initial screen:
+**Initial screen:**
+
 <img width="1917" height="1028" alt="image" src="https://github.com/user-attachments/assets/4be9f642-a6fd-40fc-bbfd-55ca823d24bc" />
 
-Agents collaborating:
+**Agents collaborating:**
 
 <img width="1917" height="927" alt="image" src="https://github.com/user-attachments/assets/1e121029-a59b-40af-a94a-9c7590ea8c01" />
 
