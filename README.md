@@ -6,10 +6,16 @@ Each agent holds knowledge and an ability the others lack, so they have to coord
 
 Built in 5 hours at **Haunted Hacks: Realtime AI Edition** (Oct 31, 2026) by a team of two.
 
-<!-- Screenshot: put the image at docs/screenshots/hero.png, then remove this comment line and the one below. -->
-<!-- ![Hollow Manor mid-run: agents coordinating on the map with the live Relay feed](docs/screenshots/hero.png) -->
+Initial screen:
+<img width="1917" height="1028" alt="image" src="https://github.com/user-attachments/assets/4be9f642-a6fd-40fc-bbfd-55ca823d24bc" />
 
-<!-- Demo video: replace this comment with a line like  **[▶ Watch the 2-minute demo](https://...)** -->
+Agents collaborating:
+
+<img width="1917" height="927" alt="image" src="https://github.com/user-attachments/assets/1e121029-a59b-40af-a94a-9c7590ea8c01" />
+
+
+Demo video:
+Link: https://youtu.be/TuA9KB2804E?si=4oQ0KBwxFzToE4nr
 
 ## How it works
 
@@ -43,19 +49,8 @@ Built in 5 hours at **Haunted Hacks: Realtime AI Edition** (Oct 31, 2026) by a t
 
 ## Architecture
 
-```
- Medium (Claude Code)    Electrician (Codex)    Locksmith (Codex)
-            \                    |                    /
-             └──── Agent Relay: #manor + DMs to "Manor" ────┘
-                                 │
-                 server/  orchestrator (Bun)
-                 spawns agents · parses actions · outage queue · operator API
-                                 │  method calls
-                 actors/  HauntedHouse Durable Actor
-                 persisted world · calls shared/engine.ts · one action at a time
-                                 │  WebSocket: full world on every change
-                 web/     React map UI (Vite, Tailwind, Motion)
-```
+<img width="841" height="453" alt="image" src="https://github.com/user-attachments/assets/bb2d58a6-282e-477b-8c5d-e1c0bcd2ee9c" />
+
 
 **Stack:** TypeScript · Bun · React · Vite · Tailwind · Motion · Agent Relay · Durable Actors · Claude Code · Codex CLI · ElevenLabs (voices) · OpenAI (speech to text)
 
